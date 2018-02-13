@@ -15,6 +15,8 @@ from itertools import chain
 
 from typing import List, Optional, Tuple
 
+from .optimized import amount_atleast
+
 
 Region = namedtuple("Region", ["chr", "start", "end"])
 
@@ -80,16 +82,16 @@ class CovStats(object):
         return np.mean(self.gq_qualities)
 
     def percent_atleast_dp(self, atleast) -> Optional[float]:
-        passing = [x for x in self.coverages if x >= atleast]
-        if len(self.coverages) > 0:
-            return (len(passing)/len(self.coverages))*100
-        return None
+        if len(self.coverages) == 0:
+            return None
+        k = amount_atleast(self.coverages, atleast)
+        return (k/len(self.coverages))*100
 
     def percent_atleast_gq(self, atleast) -> Optional[float]:
-        passing = [x for x in self.gq_qualities if x >= atleast]
-        if len(self.gq_qualities) > 0:
-            return (len(passing)/len(self.gq_qualities))*100
-        return None
+        if len(self.gq_qualities) == 0:
+            return None
+        k = amount_atleast(self.gq_qualities, atleast)
+        return (k/len(self.gq_qualities))*100
 
     @property
     def stats(self) -> dict:

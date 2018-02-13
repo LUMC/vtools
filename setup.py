@@ -10,6 +10,7 @@ setup.py
 from os.path import abspath, dirname, join
 
 from setuptools import setup
+from Cython.Build import cythonize
 
 from vtools import __version__
 
@@ -41,5 +42,6 @@ setup(
     },
     classifiers=[
         "Topic :: Scientific/Engineering :: Bio-Informatics"
-    ]
+    ],
+    ext_modules=cythonize("vtools/*.pyx")
 )
