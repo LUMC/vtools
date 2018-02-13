@@ -21,22 +21,41 @@ from .optimized import amount_atleast
 Region = namedtuple("Region", ["chr", "start", "end"])
 
 
-def coverage_for_gvcf_record(record: cyvcf2.Variant) -> List[int]:
-    """Get coverage for gvcf record per base"""
+def coverage_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000) -> List[int]:
+    """
+    Get coverage for gvcf record per base
+
+    Some records may be huge, especially those around centromeres.
+    Therefore, there is a maxlen argument. Maximally `maxlen` values
+    are returned.
+    """
     start = record.start
     end = record.end
+    size = end - start
     try:
         dp = record.format("DP")[0][0]
     except TypeError:
         dp = 0
-    return [dp]*(end-start)
+    if size < maxlen:
+        return [dp]*(end-start)
+    else:
+        return [dp]*maxlen
 
 
-def gq_for_gvcf_record(record: cyvcf2.Variant) -> List[int]:
+def gq_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000) -> List[int]:
+    """
+    Some records may be huge, especially those around centromeres.
+    Therefore, there is a maxlen argument. Maximally `maxlen` values
+    are returned.
+    """
     start = record.start
     end = record.end
+    size = end - end
     gq = record.gt_quals[0]
-    return [gq]*(end-start)
+    if size < maxlen:
+        return [gq]*(end-start)
+    else:
+        return [gq]*maxlen
 
 
 class CovStats(object):
