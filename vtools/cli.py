@@ -1,3 +1,12 @@
+"""
+vtools.cli
+~~~~~~~~~~
+
+:copyright: (c) 2018 Sander Bollen
+:copyright: (c) Leiden University Medical Center
+:license: MIT
+"""
+
 import click
 
 from .filter import *

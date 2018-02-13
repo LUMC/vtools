@@ -1,3 +1,12 @@
+"""
+vtools.stats
+~~~~~~~~~~~~
+
+:copyright: (c) 2018 Sander Bollen
+:copyright: (c) 2018 Leiden Unversity Medical Center
+:license: MIT
+"""
+
 import cyvcf2
 import numpy
 import json

@@ -1,4 +1,12 @@
-import click
+"""
+vtools.gcoverage
+~~~~~~~~~~~~~~~~
+
+:copyright: (c) 2018 Sander Bollen
+:copyright: (c) 2018 Leiden University Medical Center
+:license: MIT
+"""
+
 import cyvcf2
 import numpy as np
 
