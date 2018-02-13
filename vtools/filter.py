@@ -1,4 +1,3 @@
-import click
 from cyvcf2 import VCF, Writer
 
 import json
@@ -95,7 +94,7 @@ class Filterer(object):
     We assume gts012 to be set to True in the cyvcf2 readers
     """
 
-    def __init__(self, vcf_it,filter_params, index):
+    def __init__(self, vcf_it, filter_params, index):
         self.vcf_it = vcf_it
         self.filters = filter_params
         self.index = index
@@ -171,41 +170,3 @@ class Filterer(object):
     def __iter__(self):
         return self
 
-
-@click.command()
-@click.option("-i", "--input", type=click.Path(exists=True),
-              help="Path to input VCF file", required=True)
-@click.option("-o", "--output", type=click.Path(writable=True),
-              help="Path to output (filtered) VCF file", required=True)
-@click.option("-t", "--trash", type=click.Path(writable=True),
-              help="Path to trash VCF file", required=True)
-@click.option("-p", "--params-file", type=click.Path(exists=True),
-              help="Path to filter params json", required=True)
-@click.option('--index-sample', type=click.STRING,
-              help="Name of index sample", required=True)
-def cli(input, output, trash, params_file, index_sample):
-    vcf = VCF(input, gts012=True)
-
-    idx = vcf.samples.index(index_sample)
-    for filter_item in list(FilterClass):
-        vcf.add_filter_to_header(filter_item.value)
-
-    out = Writer(output, vcf)
-    tr = Writer(trash, vcf)
-
-    filter_params = FilterParams(params_file)
-
-    filter_it = Filterer(vcf, filter_params, idx)
-
-    for record, fi in filter_it:
-        if fi is None or len(fi) == 0:
-            out.write_record(record)
-        else:
-            record.FILTER = [x.name for x in fi]
-            tr.write_record(record)
-
-    out.close()
-    tr.close()
-
-if __name__ == "__main__":
-    cli()

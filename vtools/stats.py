@@ -1,4 +1,3 @@
-import click
 import cyvcf2
 import numpy
 import json
@@ -130,16 +129,3 @@ class Stats(object):
         return json.dumps(self.as_dict, sort_keys=True, indent=4)
 
 
-@click.command()
-@click.option("-i",
-              "--input",
-              type=click.Path(exists=True, dir_okay=False, readable=True),
-              required=True,
-              help="Input VCF file")
-def main(input):
-    stats = Stats(input)
-    print(stats.as_json)
-
-
-if __name__ == "__main__":
-    main()
