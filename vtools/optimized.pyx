@@ -8,6 +8,7 @@ vtools.optimized
 """
 cimport numpy as np
 
+
 cpdef int amount_atleast(np.int64_t[::1] values, int atleast):
     """
     Return amount of values at least `atleast`
