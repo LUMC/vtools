@@ -48,20 +48,22 @@ class CovStats(object):
     @property
     def coverages(self) -> List[int]:
         if self.__coverages is None:
-            self.__coverages = list(
+            self.__coverages = np.fromiter(
                 chain.from_iterable(
                     (coverage_for_gvcf_record(x) for x in self.records)
-                )
+                ),
+                dtype=int
             )
         return self.__coverages
 
     @property
     def gq_qualities(self) -> List[int]:
         if self.__gq_qualities is None:
-            self.__gq_qualities = list(
+            self.__gq_qualities = np.fromiter(
                 chain.from_iterable(
                     (gq_for_gvcf_record(x) for x in self.records)
-                )
+                ),
+                dtype=int
             )
         return self.__gq_qualities
 
