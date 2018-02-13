@@ -52,7 +52,7 @@ class Sample(object):
         if typ == 2:
             self.hom_alt += 1
 
-        if var.is_snp and var.is_transition:  # this only works in python 2 for now. See: https://github.com/brentp/cyvcf2/pull/70
+        if var.is_snp and var.is_transition:
             self.transitions += 1
             self.snps += 1
         elif var.is_snp:
