@@ -119,3 +119,40 @@ cdef class Sample(object):
             "gq_distribution": self.gq_distr
         }
 
+
+cpdef double get_af(record, ref_it, af_field="AF"):
+    """Get allele frequency of record in reference iterator"""
+    cdef unicode chrom = record.CHROM
+    cdef int pos = record.POS
+    cdef int start = record.start
+    cdef int end = record.end
+    cdef unicode ref = record.REF
+    cdef list alt = record.ALT
+
+    cdef unicode loc = "{0}:{1}-{2}".format(chrom, start, end)
+    it = ref_it(loc)
+    ref_records = []
+    for x in it:
+        if x.POS != pos:
+            continue
+        if x.REF != ref:
+            continue
+        if x.ALT != alt:
+            continue
+        ref_records.append(x)
+
+    cdef int amount = len(ref_records)
+    cdef size_t i
+
+    cdef double[:] afs = numpy.empty(amount)
+    for i in range(amount):
+        rr = ref_records[i]
+        field_val =  rr.INFO.get(af_field)
+        if isinstance(field_val, tuple):
+            field_val = min(field_val)
+        afs[i] = field_val
+
+    if len(afs) == 0:
+        return 0
+
+    return min(afs)

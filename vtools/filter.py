@@ -11,6 +11,7 @@ from cyvcf2 import VCF, Writer
 import json
 import enum
 
+from .optimized import get_af
 
 class FilterClass(enum.Enum):
     NON_CANONICAL = {
@@ -135,42 +136,18 @@ class Filterer(object):
                 filters.append(FilterClass.LOW_GQ)
 
         if self.filters.max_gonl_af is not None:
-            gonl_af = self.get_af(record, self.filters.gonl_vcf,
+            gonl_af = get_af(record, self.filters.gonl_vcf,
                                   self.filters.gonl_af)
             if gonl_af > self.filters.max_gonl_af:
                 filters.append(FilterClass.TOO_HIGH_GONL_AF)
 
         if self.filters.max_gnomad_af is not None:
-            gnomad_af = self.get_af(record, self.filters.gnomad_vcf,
+            gnomad_af = get_af(record, self.filters.gnomad_vcf,
                                   self.filters.gnomad_af)
             if gnomad_af > self.filters.max_gnomad_af:
                 filters.append(FilterClass.TOO_HIGH_GNOMAD_AF)
 
         return record, filters
-
-    def get_af(self, record, ref_it, af_field="AF"):
-        """Get allele frequency of record in reference iterator"""
-
-        loc = "{0}:{1}-{2}".format(record.CHROM, record.start, record.end)
-        ref_records = filter(lambda x: x.REF == record.REF,
-                             filter(lambda x: x.ALT == record.ALT,
-                                    filter(lambda x: x.POS == record.POS,
-                                           ref_it(loc))))
-
-        # if there are more than one identical variants in this vcf
-        # we will be most conservative, and take the minimum
-
-        afs = []
-        for rr in ref_records:
-            field_val = rr.INFO.get(af_field)
-            if isinstance(field_val, tuple):
-                field_val = min(field_val)
-            afs.append(field_val)
-
-        if len(afs) == 0:
-            return 0
-
-        return min(afs)
 
     def next(self):
         return self.__next__()
