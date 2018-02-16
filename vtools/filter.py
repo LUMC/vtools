@@ -6,7 +6,6 @@ vtools.filter
 :copyright: (c) 2018 Leiden University Medical Center
 :license: MIT
 """
-
 from cyvcf2 import VCF, Writer
 
 import json
@@ -108,7 +107,7 @@ class Filterer(object):
         self.filters = filter_params
         self.index = index
 
-        self.canonical_chroms = ["M", "X", "Y"] + list(map(str, range(0, 23)))
+        self.canonical_chroms = {"M", "X", "Y"}.union(set(map(str, range(0, 23))))
 
     def __next__(self):
         record = next(self.vcf_it)
@@ -120,7 +119,7 @@ class Filterer(object):
 
         if self.filters.canonical_chromosomes:
             chrom = str(record.CHROM)
-            if "chr" in chrom:
+            if chrom.startswith("chr"):
                 chrom = chrom.split("chr")[-1]
             if chrom not in self.canonical_chroms:
                 filters.append(FilterClass.NON_CANONICAL)
