@@ -31,7 +31,8 @@ setup(
         "click",
         "cyvcf2",
         "numpy",
-        "cython"
+        "cython",
+        "tqdm"
     ],
     entry_points={
         "console_scripts": [
