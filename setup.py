@@ -27,6 +27,7 @@ setup(
     author="Sander Bollen",
     author_email="a.h.b.bollen@lumc.nl",
     license="MIT",
+    packages=["vtools"],
     install_requires=[
         "click",
         "cyvcf2",
