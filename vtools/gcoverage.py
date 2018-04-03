@@ -50,7 +50,7 @@ def gq_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000) -> List[int]
     """
     start = record.start
     end = record.end
-    size = end - end
+    size = end - start
     gq = record.gt_quals[0]
     if size < maxlen:
         return [gq]*(end-start)
