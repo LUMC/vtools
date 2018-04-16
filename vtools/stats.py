@@ -34,7 +34,7 @@ class Stats(object):
         self.__calculated = False
 
     def calculate(self):
-        for record in tqdm(self.vcf, unit="variants", unit_scale=True):
+        for record in self.vcf:
             for s in self.samples:
                 s.add_variant(record)
             self.chrom_counter[record.CHROM] += 1
