@@ -25,7 +25,13 @@ from .gcoverage import *
               help="Path to filter params json", required=True)
 @click.option('--index-sample', type=click.STRING,
               help="Name of index sample", required=True)
-def filter_cli(input, output, trash, params_file, index_sample):
+@click.option("--immediate-return/--no-immediate-return",
+              default=True,
+              help="Immediately write filters to file "
+                   "upon hitting one filter criterium. "
+                   "Default = True")
+def filter_cli(input, output, trash, params_file,
+               index_sample, immediate_return):
     vcf = VCF(input, gts012=True)
 
     idx = vcf.samples.index(index_sample)
@@ -37,7 +43,7 @@ def filter_cli(input, output, trash, params_file, index_sample):
 
     filter_params = FilterParams(params_file)
 
-    filter_it = Filterer(vcf, filter_params, idx)
+    filter_it = Filterer(vcf, filter_params, idx, immediate_return)
 
     for record, fi in filter_it:
         if fi is None or len(fi) == 0:

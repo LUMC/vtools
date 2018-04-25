@@ -103,10 +103,11 @@ class Filterer(object):
     We assume gts012 to be set to True in the cyvcf2 readers
     """
 
-    def __init__(self, vcf_it, filter_params, index):
+    def __init__(self, vcf_it, filter_params, index, immediate_return=True):
         self.vcf_it = vcf_it
         self.filters = filter_params
         self.index = index
+        self.immediate_return = immediate_return
 
         self.canonical_chroms = {"M", "X", "Y"}.union(set(map(str, range(0, 23))))
 
@@ -123,28 +124,38 @@ class Filterer(object):
             if chrom.startswith("chr"):
                 chrom = chrom.split("chr")[-1]
             if chrom not in self.canonical_chroms:
+                if self.immediate_return:
+                    return record, [FilterClass.NON_CANONICAL]
                 filters.append(FilterClass.NON_CANONICAL)
 
         if self.filters.index_called:
             gt = record.gt_types[self.index]
             if gt == 0 or gt == 3:
+                if self.immediate_return:
+                    return record, [FilterClass.INDEX_UNCALLED]
                 filters.append(FilterClass.INDEX_UNCALLED)
 
         if self.filters.min_gq is not None:
             gq = record.gt_quals[self.index]
             if gq < self.filters.min_gq:
+                if self.immediate_return:
+                    return record, [FilterClass.LOW_GQ]
                 filters.append(FilterClass.LOW_GQ)
 
         if self.filters.max_gonl_af is not None:
             gonl_af = get_af(record, self.filters.gonl_vcf,
                                   self.filters.gonl_af)
             if gonl_af > self.filters.max_gonl_af:
+                if self.immediate_return:
+                    return record, [FilterClass.TOO_HIGH_GONL_AF]
                 filters.append(FilterClass.TOO_HIGH_GONL_AF)
 
         if self.filters.max_gnomad_af is not None:
             gnomad_af = get_af(record, self.filters.gnomad_vcf,
                                   self.filters.gnomad_af)
             if gnomad_af > self.filters.max_gnomad_af:
+                if self.immediate_return:
+                    return record, [FilterClass.TOO_HIGH_GNOMAD_AF]
                 filters.append(FilterClass.TOO_HIGH_GNOMAD_AF)
 
         return record, filters
@@ -154,4 +165,3 @@ class Filterer(object):
 
     def __iter__(self):
         return self
-
