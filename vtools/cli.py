@@ -6,12 +6,36 @@ vtools.cli
 :copyright: (c) Leiden University Medical Center
 :license: MIT
 """
-
+import json
 import click
+from cyvcf2 import VCF, Writer
 
-from .filter import *
-from .stats import *
-from .gcoverage import *
+from .evaluate import site_concordancy
+from .filter import FilterParams, FilterClass, Filterer
+from .stats import Stats
+from .gcoverage import RefRecord, region_coverages
+
+
+@click.command()
+@click.option("-c", "--call-vcf", type=click.Path(exists=True),
+              help="Path to VCF with calls to be evaluated",
+              required=True)
+@click.option("-p", "--positive-vcf", type=click.Path(exists=True),
+              help="Path to VCF with known calls",
+              required=True)
+@click.option("-cs", "--call-samples", type=click.STRING, multiple=True,
+              help="Sample(s) in call-vcf to consider. "
+                   "May be called multiple times",
+              required=True)
+@click.option("-ps", "--positive-samples", type=click.STRING, multiple=True,
+              help="Sample(s) in positive-vcf to consider. "
+                   "May be called multiple times",
+              required=True)
+def evaluate_cli(call_vcf, positive_vcf, call_samples, positive_samples):
+    c_vcf = VCF(call_vcf, gts012=True)
+    p_vcf = VCF(positive_vcf, gts012=True)
+    evaluated = site_concordancy(c_vcf, p_vcf, call_samples, positive_samples)
+    print(json.dumps(evaluated))
 
 
 @click.command()
@@ -80,7 +104,7 @@ def stats_cli(input):
               default=True,
               help="Collect metrics per exon or per transcript")
 def gcoverage_cli(input_gvcf, refflat_file, per_exon):
-    reader = cyvcf2.VCF(input_gvcf)
+    reader = VCF(input_gvcf)
     header = None
     with open(refflat_file) as handle:
         for line in handle:
