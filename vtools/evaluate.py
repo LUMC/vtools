@@ -14,7 +14,8 @@ from cyvcf2 import VCF
 def site_concordancy(call_vcf: VCF,
                      positive_vcf: VCF,
                      call_samples: List[str],
-                     positive_samples: List[str]) -> Dict[str, float]:
+                     positive_samples: List[str],
+                     min_gq: float = 30) -> Dict[str, float]:
     """
     Calculate concordance between sites of two call sets,
     of which one contains known true positives.
@@ -56,7 +57,8 @@ def site_concordancy(call_vcf: VCF,
         "alleles_hom_ref_concordant": 0,
         "alleles_concordant": 0,
         "alleles_discordant": 0,
-        "alleles_no_call": 0
+        "alleles_no_call": 0,
+        "alleles_low_qual": 0
     }
     for pos_record in positive_vcf:
         d['total_sites'] += 1
@@ -86,7 +88,11 @@ def site_concordancy(call_vcf: VCF,
         for p_s, c_s in zip(pos_sample_idx, call_sample_idx):
             p_gt = pos_record.gt_types[p_s]
             c_gt = call_record.gt_types[c_s]
-            if p_gt == 0 and c_gt == 0:
+
+            c_gq = call_record.gt_quals[c_s]
+            if c_gq < min_gq:
+                d['alleles_low_qual'] += 2
+            elif p_gt == 0 and c_gt == 0:
                 # both homozygous reference
                 d['alleles_concordant'] += 2
                 d['alleles_hom_ref_concordant'] += 2
