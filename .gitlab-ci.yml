@@ -3,5 +3,6 @@ build:
   tags:
     - docker
   script:
+    - pip install Cython==0.27.3
     - pip install --upgrade pip setuptools wheel
     - pip install '.'
