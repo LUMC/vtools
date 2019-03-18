@@ -9,7 +9,7 @@ setup.py
 
 from os.path import abspath, dirname, join
 
-from setuptools import setup
+from setuptools import setup, find_packages
 from Cython.Build import cythonize
 
 from vtools import __version__
@@ -27,7 +27,7 @@ setup(
     author="Sander Bollen",
     author_email="a.h.b.bollen@lumc.nl",
     license="MIT",
-    packages=["vtools"],
+    packages=find_packages(),
     install_requires=[
         "click",
         "cyvcf2",
