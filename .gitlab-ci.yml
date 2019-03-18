@@ -4,5 +4,6 @@ build:
     - docker
   script:
     - pip install Cython==0.27.3
+    - pip install numpy==1.14.1
     - pip install --upgrade pip setuptools wheel
     - pip install '.'
