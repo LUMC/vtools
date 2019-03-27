@@ -7,6 +7,7 @@ vtools.gcoverage
 :license: MIT
 """
 
+import math
 import cyvcf2
 import numpy as np
 
@@ -58,6 +59,13 @@ def gq_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000) -> List[int]
         return [gq]*maxlen
 
 
+# Credit:
+# https://gigabaseorgigabyte.wordpress.com/2017/06/26/averaging-basecall-quality-scores-the-right-way/
+# https://git.lumc.nl/klinische-genetica/capture-lumc/vtools/issues/3
+def qualmean(quals):
+    return -10*math.log(sum([10**(q/-10) for q in quals]) / len(quals), 10)
+
+
 class CovStats(object):
     def __init__(self, records):
         self.records = records
@@ -100,7 +108,7 @@ class CovStats(object):
 
     @property
     def mean_gq(self) -> float:
-        return np.mean(self.gq_qualities)
+        return qualmean(self.gq_qualities)
 
     def percent_atleast_dp(self, atleast) -> Optional[float]:
         if len(self.coverages) == 0:
