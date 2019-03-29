@@ -7,7 +7,6 @@ vtools.gcoverage
 :license: MIT
 """
 
-import math
 import cyvcf2
 import numpy as np
 
@@ -59,11 +58,13 @@ def gq_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000) -> List[int]
         return [gq]*maxlen
 
 
-# Credit:
-# https://gigabaseorgigabyte.wordpress.com/2017/06/26/averaging-basecall-quality-scores-the-right-way/
-# https://git.lumc.nl/klinische-genetica/capture-lumc/vtools/issues/3
-def qualmean(quals):
-    return -10*math.log(sum([10**(q/-10) for q in quals]) / len(quals), 10)
+def qualmean(quals: np.ndarray) -> float:
+    """
+    Credit:
+    https://gigabaseorgigabyte.wordpress.com/2017/06/26/averaging-basecall-quality-scores-the-right-way/
+    https://git.lumc.nl/klinische-genetica/capture-lumc/vtools/issues/3
+    """
+    return -10*np.log10(np.mean(np.power(10, quals/-10)))
 
 
 class CovStats(object):
@@ -73,7 +74,7 @@ class CovStats(object):
         self.__gq_qualities = None
 
     @property
-    def coverages(self) -> List[int]:
+    def coverages(self) -> np.ndarray:
         if self.__coverages is None:
             self.__coverages = np.fromiter(
                 chain.from_iterable(
@@ -84,7 +85,7 @@ class CovStats(object):
         return self.__coverages
 
     @property
-    def gq_qualities(self) -> List[int]:
+    def gq_qualities(self) -> np.ndarray:
         if self.__gq_qualities is None:
             self.__gq_qualities = np.fromiter(
                 chain.from_iterable(
