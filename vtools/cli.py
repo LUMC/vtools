@@ -108,7 +108,7 @@ def gcoverage_cli(input_gvcf, refflat_file, per_exon):
     header = None
     with open(refflat_file) as handle:
         for line in handle:
-            r = RefRecord(line)
+            r = RefRecord.from_line(line)
             if not per_exon:
                 regions = [x[1] for x in r.cds_exons]
                 cov = region_coverages(reader, regions)
