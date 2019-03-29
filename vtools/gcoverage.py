@@ -13,7 +13,7 @@ import numpy as np
 from collections import namedtuple
 from itertools import chain
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, NamedTuple
 
 from .optimized import amount_atleast
 
@@ -132,37 +132,38 @@ class CovStats(object):
         return s
 
 
-class RefRecord(object):
-    def __init__(self, line: str):
-        self.line = line  # type: str
-        self.gene = None  # type: Optional[str]
-        self.transcript = None  # type: Optional[str]
-        self.contig = None  # type: Optional[str]
-        self.start = None  # type: Optional[int]
-        self.end = None  # type: Optional[int]
-        self.cds_start = None  # type: Optional[int]
-        self.cds_end = None  # type: Optional[int]
-        self.exon_starts = []  # type: List[int]
-        self.exon_ends = []  # type: List[int]
-        self.forward = True
+class RefRecord(NamedTuple):
+    gene: str
+    transcript: str
+    contig: str
+    start: int
+    end: int
+    cds_start: int
+    cds_end: int
+    exon_starts: List[int]
+    exon_ends: List[int]
+    forward: bool
 
-        self.parse()
-
-    def parse(self):
-        contents = self.line.strip().split("\t")
+    @classmethod
+    def from_line(cls, line):
+        contents = line.strip().split("\t")
         if len(contents) < 11:
             raise ValueError("refFlat line must have at least 11 fields")
-        self.gene = contents[0]
-        self.transcript = contents[1]
-        self.contig = contents[2]
+        gene = contents[0]
+        transcript = contents[1]
+        contig = contents[2]
         if "-" in contents[3].strip():
-            self.forward = False
-        self.start = int(contents[4])
-        self.end = int(contents[5])
-        self.cds_start = int(contents[6])
-        self.cds_end = int(contents[7])
-        self.exon_starts = [int(x) for x in contents[9].split(",")[:-1]]
-        self.exon_ends = [int(x) for x in contents[10].split(",")[:-1]]
+            forward = False
+        else:
+            forward = True
+        start = int(contents[4])
+        end = int(contents[5])
+        cds_start = int(contents[6])
+        cds_end = int(contents[7])
+        exon_starts = [int(x) for x in contents[9].split(",")[:-1]]
+        exon_ends = [int(x) for x in contents[10].split(",")[:-1]]
+        return cls(gene, transcript, contig, start, end, cds_start,
+                   cds_end, exon_starts, exon_ends, forward)
 
     @property
     def exons(self) -> List[Region]:
