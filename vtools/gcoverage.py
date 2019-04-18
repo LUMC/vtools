@@ -58,6 +58,15 @@ def gq_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000) -> List[int]
         return [gq]*maxlen
 
 
+def qualmean(quals: np.ndarray) -> float:
+    """
+    Credit:
+    https://gigabaseorgigabyte.wordpress.com/2017/06/26/averaging-basecall-quality-scores-the-right-way/
+    https://git.lumc.nl/klinische-genetica/capture-lumc/vtools/issues/3
+    """
+    return -10*np.log10(np.mean(np.power(10, quals/-10)))
+
+
 class CovStats(object):
     def __init__(self, records):
         self.records = records
@@ -65,7 +74,7 @@ class CovStats(object):
         self.__gq_qualities = None
 
     @property
-    def coverages(self) -> List[int]:
+    def coverages(self) -> np.ndarray:
         if self.__coverages is None:
             self.__coverages = np.fromiter(
                 chain.from_iterable(
@@ -76,7 +85,7 @@ class CovStats(object):
         return self.__coverages
 
     @property
-    def gq_qualities(self) -> List[int]:
+    def gq_qualities(self) -> np.ndarray:
         if self.__gq_qualities is None:
             self.__gq_qualities = np.fromiter(
                 chain.from_iterable(
@@ -100,7 +109,7 @@ class CovStats(object):
 
     @property
     def mean_gq(self) -> float:
-        return np.mean(self.gq_qualities)
+        return qualmean(self.gq_qualities)
 
     def percent_atleast_dp(self, atleast) -> Optional[float]:
         if len(self.coverages) == 0:
