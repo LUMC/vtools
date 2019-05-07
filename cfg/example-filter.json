@@ -1,0 +1,9 @@
+{
+  "canonical_chromosomes": true,
+  "gq_pass": 7,
+  "index_called": true,
+  "low_gnomad_af": 0.05,
+  "low_gonl_af": null,
+  "gnomad_vcf": "/path/to/vcf",
+  "gonl_vcf": null
+}
