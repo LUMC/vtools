@@ -134,14 +134,18 @@ Options:
 
 ## Installation
 
-* Python 3.6 at minimum
-* numpy and cython must be installed prior to installing vtools
-    * this will get fixed in the very near future
-
-After both requirements have been met, simply install vtools with
+vtools is now on pip! Since the 'vtools' name is already taken by another
+package, installing _this_ vtools requires installing the following:
 
 ```bash
-python setup.py install
+pip install v-tools
+```
+
+After installation, tools will still be called `vtools-<tool>`. Programmatic
+access also simply works with
+
+```python
+import vtools
 ```
 
 ## License
