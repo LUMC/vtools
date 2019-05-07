@@ -53,7 +53,7 @@ for ext in cython_extensions:
     ext.include_dirs.append(np.get_include())
 
 setup(
-    name="vtools",
+    name="v-tools",
     version="0.0.1",
     description="Various tools operating over VCF files",
     long_description=long_desc,
@@ -64,6 +64,7 @@ setup(
     packages=find_packages(),
     python_requires=">=3.6",
     zip_safe=False,
+    include_package_data=True,
     install_requires=[
         "click",
         "cyvcf2",
