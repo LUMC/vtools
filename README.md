@@ -63,4 +63,42 @@ Options:
   -i, --input FILE  Input VCF file  [required]
   --help            Show this message and exit.
 ```
-  
+
+### vtools-gcoverage
+
+Collect coverage metrics over a gVCF file for every exon or every transcript
+in a refFlat file. This assumes the input VCF file is at least similar to
+GATK's gVCF files. gVCF files are only expected to have one sample; if
+your input file contains multiple samples, we simply take the first only.
+
+Output is a simple TSV file with the following columns
+
+| column | meaning |
+| ------ | ------- |
+| exon | exon number |
+| gene | gene name / symbol / id |
+| mean_dp | mean DP value over the exon |
+| mean_gq | mean GQ value over the exon* |
+| median_dp | median DP value over the exon |
+| median_gq | median GQ value over the exon |
+| perc_at_least_{10, 20, 30, 50, 100}_dp | Percentage of exon with DP value over value |
+| perc_at_least_{10, 29, 30, 50, 90}_gq | Percentage of exon with GQ value over exon | 
+| transcript | transcript name / symbol / id |
+
+*: mean GQ value is computed by first calculating the P-value of all GQ 
+values, then calculating the mean over these P-values, and lastly 
+converting this number back to a phred score.
+
+#### Usage
+
+```bash
+Usage: vtools-gcoverage [OPTIONS]
+
+Options:
+  -I, --input-gvcf PATH          Path to input VCF file  [required]
+  -R, --refflat-file PATH        Path to refFlat file  [required]
+  --per-exon / --per-transcript  Collect metrics per exon or per transcript
+  --help                         Show this message and exit.
+```
+
+
