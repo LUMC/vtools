@@ -131,3 +131,19 @@ Options:
                                 called multiple times  [required]
   --help                        Show this message and exit.
 ```
+
+## Installation
+
+* Python 3.6 at minimum
+* numpy and cython must be installed prior to installing vtools
+    * this will get fixed in the very near future
+
+After both requirements have been met, simply install vtools with
+
+```bash
+python setup.py install
+```
+
+## License
+
+MIT
