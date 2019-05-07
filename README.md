@@ -112,8 +112,8 @@ tool can be quite useful.
 Output is a simple JSON file listing counts of concordant and discordant
 alleles. 
 
-vtools-evaluate only considers one sample. Multisample VCF files are allowed;
-the sample to be evaluated has to be set through a CLI argument.
+Multisample VCF files are allowed; the samples to be evaluated have to be set 
+through a CLI argument.
 
 
 #### Usage
