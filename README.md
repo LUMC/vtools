@@ -26,8 +26,8 @@ file, and a VCF file containing all the filtered-out variants.
 
 #### Configuration 
 
-Configuration of filters goes by a little JSON file. See [here]() for an 
-example, and [here]() for the json schema.
+Configuration of filters goes by a little JSON file. 
+See [here](cfg/example-filter.json) for an example.
 
 
 #### Usage
