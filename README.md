@@ -101,4 +101,33 @@ Options:
   --help                         Show this message and exit.
 ```
 
+### vtools-evaluate
 
+Evaluate a VCF file to a baseline VCF file containing true positives. 
+We only consider variants that are present in both VCF files. This makes
+it useful when the two VCF files have been produced by wildly different
+technologies. E.g, when comparing a WES VCF file vs a SNP array, this
+tool can be quite useful.
+
+Output is a simple JSON file listing counts of concordant and discordant
+alleles. 
+
+vtools-evaluate only considers one sample. Multisample VCF files are allowed;
+the sample to be evaluated has to be set through a CLI argument.
+
+
+#### Usage
+
+```bash
+Usage: vtools-evaluate [OPTIONS]
+
+Options:
+  -c, --call-vcf PATH           Path to VCF with calls to be evaluated
+                                [required]
+  -p, --positive-vcf PATH       Path to VCF with known calls  [required]
+  -cs, --call-samples TEXT      Sample(s) in call-vcf to consider. May be
+                                called multiple times  [required]
+  -ps, --positive-samples TEXT  Sample(s) in positive-vcf to consider. May be
+                                called multiple times  [required]
+  --help                        Show this message and exit.
+```
