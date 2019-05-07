@@ -60,6 +60,8 @@ setup(
     author_email="a.h.b.bollen@lumc.nl",
     license="MIT",
     packages=find_packages(),
+    python_requires=">=3.6",
+    zip_safe=False,
     install_requires=[
         "click",
         "cyvcf2",
@@ -76,6 +78,9 @@ setup(
         ]
     },
     classifiers=[
+        "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7"
         "Topic :: Scientific/Engineering :: Bio-Informatics"
     ],
     ext_modules=cython_extensions
