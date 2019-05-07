@@ -54,7 +54,7 @@ for ext in cython_extensions:
 
 setup(
     name="v-tools",
-    version="0.0.1",
+    version="1.0.0",
     description="Various tools operating over VCF files",
     long_description=long_desc,
     author="Sander Bollen",
