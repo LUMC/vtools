@@ -48,4 +48,19 @@ Options:
   --help                          Show this message and exit.
 
 ```
+
+### vtools-stats
+
+Collects some general statistics about a VCF file, and writes a json to
+stdout.
+
+#### Usage
+
+```bash
+Usage: vtools-stats [OPTIONS]
+
+Options:
+  -i, --input FILE  Input VCF file  [required]
+  --help            Show this message and exit.
+```
   
