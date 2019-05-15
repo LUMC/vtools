@@ -1,8 +1,33 @@
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/vtools/README.html)
+
 vtools
 ======
 
 Little toolset operating over VCF files. Uses cyvcf2 and cython under
 the hood for speed.
+
+## Installation
+
+### PyPI
+vtools is now on pip! Since the 'vtools' name is already taken by another
+package, installing _this_ vtools requires installing the following:
+
+```bash
+pip install v-tools
+```
+
+After installation, tools will still be called `vtools-<tool>`. Programmatic
+access also simply works with
+
+```python
+import vtools
+```
+
+### Conda
+
+```bash
+conda install -c bioconda vtools
+```
 
 
 Tools
@@ -130,22 +155,6 @@ Options:
   -ps, --positive-samples TEXT  Sample(s) in positive-vcf to consider. May be
                                 called multiple times  [required]
   --help                        Show this message and exit.
-```
-
-## Installation
-
-vtools is now on pip! Since the 'vtools' name is already taken by another
-package, installing _this_ vtools requires installing the following:
-
-```bash
-pip install v-tools
-```
-
-After installation, tools will still be called `vtools-<tool>`. Programmatic
-access also simply works with
-
-```python
-import vtools
 ```
 
 ## License
