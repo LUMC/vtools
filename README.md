@@ -155,9 +155,9 @@ Options:
   -ps, --positive-samples TEXT  Sample(s) in positive-vcf to consider. May be
                                 called multiple times  [required]
   -s, --stats PATH              Path to output stats json file  [required]
-  -dc, --discordant PATH        Path to output the discordant VCF records to
-  --help                        Show this message and exit.
-```
+  -dc, --discordant PATH        Path to output discordant VCF file
+  --help                        Show this message and exit
+  ```
 
 ## License
 

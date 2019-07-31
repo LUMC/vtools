@@ -34,7 +34,7 @@ from .gcoverage import RefRecord, region_coverages
 @click.option("-s", "--stats", type=click.Path(writable=True),
               help="Path to output stats json file", required=True)
 @click.option("-dc", "--discordant", type=click.Path(writable=True),
-              help="Path to output the discordant VCF records to",
+              help="Path to output discordant VCF file",
               required=False)
 def evaluate_cli(call_vcf, positive_vcf, call_samples, positive_samples, stats,
                  discordant):
