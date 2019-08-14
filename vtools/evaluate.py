@@ -60,6 +60,8 @@ def site_concordancy(call_vcf: VCF,
         "alleles_no_call": 0,
         "alleles_low_qual": 0
     }
+    discordant_count = 0
+    discordant_records = list()
     for pos_record in positive_vcf:
         d['total_sites'] += 1
         query_str = "{0}:{1}-{2}".format(
@@ -130,4 +132,9 @@ def site_concordancy(call_vcf: VCF,
                 # the same has no call in one or more of the VCF files
                 d['alleles_no_call'] += 2
 
-    return d
+            # The current variant is discordant
+            if d['alleles_discordant'] > discordant_count:
+                discordant_count = d['alleles_discordant']
+                discordant_records.append(call_record)
+
+    return d, discordant_records

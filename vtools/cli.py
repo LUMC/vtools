@@ -31,11 +31,26 @@ from .gcoverage import RefRecord, region_coverages
               help="Sample(s) in positive-vcf to consider. "
                    "May be called multiple times",
               required=True)
-def evaluate_cli(call_vcf, positive_vcf, call_samples, positive_samples):
+@click.option("-s", "--stats", type=click.Path(writable=True),
+              help="Path to output stats json file", default='-')
+@click.option("-dc", "--discordant", type=click.Path(writable=True),
+              help="Path to output discordant VCF file",
+              required=False)
+def evaluate_cli(call_vcf, positive_vcf, call_samples, positive_samples, stats,
+                 discordant):
     c_vcf = VCF(call_vcf, gts012=True)
     p_vcf = VCF(positive_vcf, gts012=True)
-    evaluated = site_concordancy(c_vcf, p_vcf, call_samples, positive_samples)
-    print(json.dumps(evaluated))
+    st, disc = site_concordancy(c_vcf, p_vcf, call_samples,
+                                positive_samples)
+    # Write the stats json file
+    with click.open_file(stats, 'w') as fout:
+        print(json.dumps(st), file=fout)
+
+    # If specified, write the discordant variants
+    if discordant:
+        with click.open_file(discordant, 'w') as fout:
+            for record in disc:
+                print(record, file=fout, end='')
 
 
 @click.command()
