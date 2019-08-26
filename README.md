@@ -135,11 +135,15 @@ technologies. E.g, when comparing a WES VCF file vs a SNP array, this
 tool can be quite useful.
 
 Output is a simple JSON file listing counts of concordant and discordant
-alleles. 
+alleles and some other metrics. It is also possible to output the discordant
+VCF records.
 
 Multisample VCF files are allowed; the samples to be evaluated have to be set 
 through a CLI argument.
 
+Variants from the `--call-vcf` are filtered to have a Genotype Quality (GQ) of
+at least 30 by default. This can be overruled by specifying `--min-qual 0`.
+The optional flag `--min-depth` can be used to set the minimum read coverage.
 
 #### Usage
 
@@ -156,6 +160,8 @@ Options:
                                 called multiple times  [required]
   -s, --stats PATH              Path to output stats json file
   -dc, --discordant PATH        Path to output discordant VCF file
+  -mq, --min-qual FLOAT         Minimum quality of variants to consider
+  -md, --min-depth FLOAT        Minimum depth of variants to consider
   --help                        Show this message and exit.
 ```
 

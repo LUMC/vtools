@@ -15,7 +15,8 @@ def site_concordancy(call_vcf: VCF,
                      positive_vcf: VCF,
                      call_samples: List[str],
                      positive_samples: List[str],
-                     min_gq: float = 30) -> Dict[str, float]:
+                     min_gq: float = 30,
+                     min_dp: float = 0) -> Dict[str, float]:
     """
     Calculate concordance between sites of two call sets,
     of which one contains known true positives.
@@ -32,9 +33,11 @@ def site_concordancy(call_vcf: VCF,
     :param call_vcf: The VCF to evaluate. Must have gts012=True
     :param positive_vcf: The VCF file containing true positive sites.
         Must have gts012=True
-    :param call_samples: List of samples in `call_vcf` to consider
+    :param call_samples: List of samples in `call_vcf` to consider.
     :param positive_samples: List of samples in `positive_vcf` to consider.
     Must have same length than `call_samples`
+    :param min_qg: Minimum quality of variants to consider.
+    :param min_dp: Minimum depth of variants to consider.
 
     :raises: ValueError if sample lists are not of same size.
 
@@ -58,7 +61,8 @@ def site_concordancy(call_vcf: VCF,
         "alleles_concordant": 0,
         "alleles_discordant": 0,
         "alleles_no_call": 0,
-        "alleles_low_qual": 0
+        "alleles_low_qual": 0,
+        "alleles_low_depth": 0
     }
     discordant_count = 0
     discordant_records = list()
@@ -91,10 +95,19 @@ def site_concordancy(call_vcf: VCF,
             p_gt = pos_record.gt_types[p_s]
             c_gt = call_record.gt_types[c_s]
 
+            # If the site does not pass the quality requirements
             c_gq = call_record.gt_quals[c_s]
-            if c_gq < min_gq:
-                d['alleles_low_qual'] += 2
-            elif p_gt == 0 and c_gt == 0:
+            c_dp = call_record.gt_depths[c_s]
+
+            if c_gq < min_gq or c_dp < min_dp:
+                if c_gq < min_gq:
+                    d['alleles_low_qual'] += 2
+                if c_dp < min_dp:
+                    d['alleles_low_depth'] += 2
+                continue
+
+            # If the site passed the quality requirements
+            if p_gt == 0 and c_gt == 0:
                 # both homozygous reference
                 d['alleles_concordant'] += 2
                 d['alleles_hom_ref_concordant'] += 2

@@ -36,12 +36,16 @@ from .gcoverage import RefRecord, region_coverages
 @click.option("-dc", "--discordant", type=click.Path(writable=True),
               help="Path to output discordant VCF file",
               required=False)
-def evaluate_cli(call_vcf, positive_vcf, call_samples, positive_samples, stats,
-                 discordant):
+@click.option("-mq", "--min-qual", type=float,
+              help="Minimum quality of variants to consider", default=30)
+@click.option("-md", "--min-depth", type=float,
+              help="Minimum depth of variants to consider", default=0)
+def evaluate_cli(call_vcf, positive_vcf, call_samples, positive_samples,
+                 min_qual, min_depth, stats, discordant):
     c_vcf = VCF(call_vcf, gts012=True)
     p_vcf = VCF(positive_vcf, gts012=True)
     st, disc = site_concordancy(c_vcf, p_vcf, call_samples,
-                                positive_samples)
+                                positive_samples, min_qual, min_depth)
     # Write the stats json file
     with click.open_file(stats, 'w') as fout:
         print(json.dumps(st), file=fout)
