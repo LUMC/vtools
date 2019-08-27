@@ -5,22 +5,14 @@ from vtools.evaluate import site_concordancy
 from cyvcf2 import VCF
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def known_concordant():
-    known = 'tests/cases/gatk.vcf.gz'
-    d, disc = site_concordancy(VCF(known, gts012=True), VCF(known,
-                                                            gts012=True),
-                               ['NA12878'], ['NA12878'], min_gq=0,
-                               min_dp=0)
-    return d
-
-
-@pytest.fixture
-def blank_NA12878():
     filename = 'tests/cases/gatk.vcf.gz'
-    d, disc = site_concordancy(VCF(filename, gts012=True), VCF(filename,
-                                                               gts012=True),
-                               ['NA12878'], ['BLANK'], min_gq=0, min_dp=0)
+    call = VCF(filename, gts012=True)
+    positive = VCF(filename, gts012=True)
+    d, disc = site_concordancy(call, positive, call_samples=['NA12878'],
+                               positive_samples=['NA12878'],
+                               min_gq=0, min_dp=0)
     return d
 
 
@@ -56,8 +48,8 @@ def test_alleles_discordant(known_concordant):
     assert known_concordant['alleles_discordant'] == 0
 
 
-def test_alleles_no_call(blank_NA12878):
-    assert blank_NA12878['alleles_no_call'] == 8
+def test_alleles_no_call(known_concordant):
+    assert known_concordant['alleles_no_call'] == 0
 
 
 def test_alleles_low_qual(known_concordant):
@@ -66,3 +58,41 @@ def test_alleles_low_qual(known_concordant):
 
 def test_alleles_low_depth(known_concordant):
     assert known_concordant['alleles_low_depth'] == 0
+
+
+@pytest.fixture(scope='module')
+def BLANK_NA12878():
+    filename = 'tests/cases/gatk.vcf.gz'
+    call = VCF(filename, gts012=True)
+    positive = VCF(filename, gts012=True)
+    d, disc = site_concordancy(call, positive, call_samples=['BLANK'],
+                               positive_samples=['NA12878'],
+                               min_gq=30, min_dp=20)
+    return d
+
+
+def test_low_qual_30(BLANK_NA12878):
+    assert BLANK_NA12878['alleles_low_qual'] == 42
+
+
+def test_low_depth_20(BLANK_NA12878):
+    assert BLANK_NA12878['alleles_low_depth'] == 44
+
+
+def test_no_call(BLANK_NA12878):
+    assert BLANK_NA12878['alleles_no_call'] == 8
+
+
+@pytest.fixture(scope='module')
+def NA12878_BLANK():
+    filename = 'tests/cases/gatk.vcf.gz'
+    call = VCF(filename, gts012=True)
+    positive = VCF(filename, gts012=True)
+    d, disc = site_concordancy(call, positive, call_samples=['NA12878'],
+                               positive_samples=['BLANK'],
+                               min_gq=30, min_dp=20)
+    return d
+
+
+# def test_no_call2(NA12878_BLANK):
+#     assert NA12878_BLANK['alleles_no_call'] == 8

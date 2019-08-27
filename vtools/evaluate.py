@@ -98,6 +98,7 @@ def site_concordancy(call_vcf: VCF,
             # If the site does not pass the quality requirements
             c_gq = call_record.gt_quals[c_s]
             c_dp = call_record.gt_depths[c_s]
+            print(f'{call_record.POS}\tc_gt: {c_gt} p_gt: {p_gt}')
 
             if c_gq < min_gq or c_dp < min_dp:
                 if c_gq < min_gq:
