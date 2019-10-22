@@ -6,3 +6,4 @@ build:
     - pip install --upgrade pip setuptools wheel
     - pip install cython
     - pip install '.'
+    - tox
