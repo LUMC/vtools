@@ -72,11 +72,11 @@ def BLANK_NA12878():
 
 
 def test_low_qual_30(BLANK_NA12878):
-    assert BLANK_NA12878['alleles_low_qual'] == 42
+    assert BLANK_NA12878['alleles_low_qual'] == 34
 
 
 def test_low_depth_20(BLANK_NA12878):
-    assert BLANK_NA12878['alleles_low_depth'] == 44
+    assert BLANK_NA12878['alleles_low_depth'] == 36
 
 
 def test_no_call(BLANK_NA12878):

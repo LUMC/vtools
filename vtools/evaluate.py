@@ -81,7 +81,6 @@ def site_concordancy(call_vcf: VCF,
                     and it_record.POS == pos_record.POS
                     and it_record.REF == pos_record.REF
                     and it_record.ALT == pos_record.ALT):
-
                 same.append(it_record)
 
         if len(same) != 1:
@@ -89,22 +88,38 @@ def site_concordancy(call_vcf: VCF,
 
         call_record = same[0]
         d['sites_considered'] += 1
-        d['alleles_considered'] += (2*len(positive_samples))
+        d['alleles_considered'] += (2 * len(positive_samples))
 
         for p_s, c_s in zip(pos_sample_idx, call_sample_idx):
             p_gt = pos_record.gt_types[p_s]
             c_gt = call_record.gt_types[c_s]
 
-            # If the site does not pass the quality requirements
+            # Is there missing data in one of the vcf files?
+            if p_gt == 3 or c_gt == 3:
+                d['alleles_no_call'] += 2
+                continue
+
+            # Get the quality requirements for the call site
             c_gq = call_record.gt_quals[c_s]
             c_dp = call_record.gt_depths[c_s]
-            print(f'{call_record.POS}\tc_gt: {c_gt} p_gt: {p_gt}')
 
-            if c_gq < min_gq or c_dp < min_dp:
-                if c_gq < min_gq:
-                    d['alleles_low_qual'] += 2
-                if c_dp < min_dp:
-                    d['alleles_low_depth'] += 2
+            # Did we fail any of the quality control checks?
+            # We use this variable since we want to count all quality checks
+            # independenly, and a single sample can fail multiple checks
+            failed_quality_check = False
+
+            # Is the QG of the call site below the threshold?
+            if c_gq < min_gq:
+                d['alleles_low_qual'] += 2
+                failed_quality_check = True
+
+            # Is the DP of the call site below the threshold?
+            if c_dp < min_dp:
+                d['alleles_low_depth'] += 2
+                failed_quality_check = True
+
+            # Go to the next variant if any of the quality checks failed
+            if failed_quality_check:
                 continue
 
             # If the site passed the quality requirements
@@ -143,8 +158,8 @@ def site_concordancy(call_vcf: VCF,
                 d['alleles_concordant'] += 2
                 d['alleles_hom_alt_concordant'] += 2
             else:
-                # the same has no call in one or more of the VCF files
-                d['alleles_no_call'] += 2
+                # This should not be reached
+                raise RuntimeError('Unhandled genotype call')
 
             # The current variant is discordant
             if d['alleles_discordant'] > discordant_count:
