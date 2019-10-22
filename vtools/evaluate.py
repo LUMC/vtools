@@ -83,6 +83,10 @@ def site_concordancy(call_vcf: VCF,
                     and it_record.ALT == pos_record.ALT):
                 same.append(it_record)
 
+        # If the variant is not present in the call vcf
+        if len(same) == 0:
+            d['alleles_no_call'] += 2
+
         if len(same) != 1:
             continue
 

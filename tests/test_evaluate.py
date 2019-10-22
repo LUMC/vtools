@@ -94,5 +94,42 @@ def NA12878_BLANK():
     return d
 
 
-# def test_no_call2(NA12878_BLANK):
-#     assert NA12878_BLANK['alleles_no_call'] == 8
+@pytest.fixture(scope='module')
+def NA12878_call_truncated():
+    """ When the call set is truncated, i.e. is missing variants which are
+    present in the positive vcf file """
+
+    filename = 'tests/cases/gatk.vcf.gz'
+    truncated = 'tests/cases/gatk_truncated.vcf.gz'
+    call = VCF(truncated, gts012=True)
+    positive = VCF(filename, gts012=True)
+    d, disc = site_concordancy(call, positive, call_samples=['NA12878'],
+                               positive_samples=['BLANK'],
+                               min_gq=30, min_dp=20)
+    return d
+
+
+def test_truncated_called_no_call(NA12878_call_truncated):
+    """ Variants which are missing from the call vcf count towards
+    alleles_no_call """
+    assert NA12878_call_truncated['alleles_no_call'] == 12
+
+
+@pytest.fixture(scope='module')
+def NA12878_positive_truncated():
+    """ When the known set is truncated, i.e. the called vcf file contains
+    variants which are absent from the positive vcf file """
+    filename = 'tests/cases/gatk.vcf.gz'
+    truncated = 'tests/cases/gatk_truncated.vcf.gz'
+    call = VCF(filename, gts012=True)
+    positive = VCF(truncated, gts012=True)
+    d, disc = site_concordancy(call, positive, call_samples=['NA12878'],
+                               positive_samples=['BLANK'],
+                               min_gq=30, min_dp=20)
+    return d
+
+
+def test_truncated_known_no_call(NA12878_positive_truncated):
+    """ Variants which are missing from the known vcf do not count towards
+    alleles_no_call """
+    assert NA12878_positive_truncated['alleles_no_call'] == 0
