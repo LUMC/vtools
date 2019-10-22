@@ -66,6 +66,7 @@ def site_concordancy(call_vcf: VCF,
     }
     discordant_count = 0
     discordant_records = list()
+
     for pos_record in positive_vcf:
         d['total_sites'] += 1
         query_str = "{0}:{1}-{2}".format(
@@ -76,7 +77,13 @@ def site_concordancy(call_vcf: VCF,
 
         it = call_vcf(query_str)
         same = []
+        # If the vcf file has been decomposed, there can be multiple sites with
+        # the same CHROM and POS, which is why we have to iterate over all the
+        # sites that are returned
         for it_record in it:
+            # We only want to consider sites that have the same CHROM, POS, REF
+            # and ALT as the positive vcf, since otherwise we might consider
+            # A/T and A/G as identical since they are both heterozygous
             if (it_record.CHROM == pos_record.CHROM
                     and it_record.POS == pos_record.POS
                     and it_record.REF == pos_record.REF

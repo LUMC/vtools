@@ -117,7 +117,7 @@ def test_truncated_called_no_call(NA12878_call_truncated):
 
 @pytest.fixture(scope='module')
 def NA12878_positive_truncated():
-    """ When the known set is truncated, i.e. the called vcf file contains
+    """ When the positive set is truncated, i.e. the called vcf file contains
     variants which are absent from the positive vcf file """
     filename = 'tests/cases/gatk.vcf.gz'
     truncated = 'tests/cases/gatk_truncated.vcf.gz'
@@ -129,7 +129,7 @@ def NA12878_positive_truncated():
     return d
 
 
-def test_truncated_known_no_call(NA12878_positive_truncated):
-    """ Variants which are missing from the known vcf do not count towards
+def test_truncated_positive_no_call(NA12878_positive_truncated):
+    """ Variants which are missing from the positive vcf do not count towards
     alleles_no_call """
     assert NA12878_positive_truncated['alleles_no_call'] == 0
