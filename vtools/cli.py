@@ -32,7 +32,7 @@ from .gcoverage import RefRecord, region_coverages
                    "May be called multiple times",
               required=True)
 @click.option("-s", "--stats", type=click.Path(writable=True),
-              help="Path to output stats json file", default='-')
+              help="Path to output stats json file")
 @click.option("-dc", "--discordant", type=click.Path(writable=True),
               help="Path to output discordant VCF file",
               required=False)
@@ -47,8 +47,11 @@ def evaluate_cli(call_vcf, positive_vcf, call_samples, positive_samples,
     st, disc = site_concordancy(c_vcf, p_vcf, call_samples,
                                 positive_samples, min_qual, min_depth)
     # Write the stats json file
-    with click.open_file(stats, 'w') as fout:
-        print(json.dumps(st), file=fout)
+    if stats is None:
+        print(json.dumps(st))
+    else:
+        with click.open_file(stats, 'w') as fout:
+            print(json.dumps(st), file=fout)
 
     # If specified, write the discordant variants
     if discordant:
