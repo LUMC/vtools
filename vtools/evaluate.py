@@ -11,6 +11,33 @@ from typing import List, Dict
 from cyvcf2 import VCF
 
 
+def parse_variants(call: List[any], pos: List[any], results: Dict[str, int]):
+    """ Parse the variants and add to results """
+
+    call_variant = sorted(call[0:2])
+    pos_variant = sorted(pos[0:2])
+
+    # The types of concordant calls are counted separately
+    if call_variant == pos_variant:
+        # These variants are homozygous reference
+        if call_variant == [0, 0]:
+            results['alleles_hom_ref_concordant'] += 2
+        # These variants are heterozygous, since they have different calls
+        elif call_variant[0] != call_variant[1]:
+            results['alleles_het_concordant'] += 2
+        # If they are not homozygous reference, and not heterozygous, they must
+        # be homozygous alternative, for whichever alt allele they have
+        else:
+            results['alleles_hom_alt_concordant'] += 2
+
+    # Here we count all alleles independently, also for the concordant calls
+    for i, j in zip(call_variant, pos_variant):
+        if i == j:
+            results['alleles_concordant'] += 1
+        else:
+            results['alleles_discordant'] += 1
+
+
 def site_concordancy(call_vcf: VCF,
                      positive_vcf: VCF,
                      call_samples: List[str],
@@ -98,6 +125,7 @@ def site_concordancy(call_vcf: VCF,
             continue
 
         call_record = same[0]
+
         d['sites_considered'] += 1
         d['alleles_considered'] += (2 * len(positive_samples))
 
@@ -133,44 +161,12 @@ def site_concordancy(call_vcf: VCF,
             if failed_quality_check:
                 continue
 
-            # If the site passed the quality requirements
-            if p_gt == 0 and c_gt == 0:
-                # both homozygous reference
-                d['alleles_concordant'] += 2
-                d['alleles_hom_ref_concordant'] += 2
-            elif p_gt == 0 and c_gt == 1:
-                # heterozygous when homozygous reference
-                d['alleles_concordant'] += 1
-                d['alleles_discordant'] += 1
-            elif p_gt == 0 and c_gt == 2:
-                # homozygous alt when homozygous ref
-                d['alleles_discordant'] += 2
-            elif p_gt == 1 and c_gt == 0:
-                # homozygous ref when heterozygous
-                d['alleles_concordant'] += 1
-                d['alleles_discordant'] += 1
-            elif p_gt == 1 and c_gt == 1:
-                # both heterozygous
-                d['alleles_concordant'] += 2
-                d['alleles_het_concordant'] += 2
-            elif p_gt == 1 and c_gt == 2:
-                # homozygous alt when heterozygous
-                d['alleles_concordant'] += 1
-                d['alleles_discordant'] += 1
-            elif p_gt == 2 and c_gt == 0:
-                # homozygous ref when homozygous alt
-                d['alleles_discordant'] += 2
-            elif p_gt == 2 and c_gt == 1:
-                # heterozygous when homozygous alt
-                d['alleles_concordant'] += 1
-                d['alleles_discordant'] += 1
-            elif p_gt == 2 and c_gt == 2:
-                # both homozygous alt
-                d['alleles_concordant'] += 2
-                d['alleles_hom_alt_concordant'] += 2
-            else:
-                # This should not be reached
-                raise RuntimeError('Unhandled genotype call')
+            # Get the genotypes
+            pos = pos_record.genotypes[p_s]
+            cal = call_record.genotypes[c_s]
+
+            # Parse the genotypes and add the results into d
+            parse_variants(pos, cal, d)
 
             # The current variant is discordant
             if d['alleles_discordant'] > discordant_count:
