@@ -133,3 +133,27 @@ def test_truncated_positive_no_call(NA12878_positive_truncated):
     """ Variants which are missing from the positive vcf do not count towards
     alleles_no_call """
     assert NA12878_positive_truncated['alleles_no_call'] == 0
+
+
+def test_phased_positive():
+    """ Test error message when the positive vcf contains phased variants """
+    filename = 'tests/cases/gatk.vcf.gz'
+    phased = 'tests/cases/dummy_phased_blank.vcf.gz'
+    call = VCF(filename, gts012=True)
+    phased = VCF(phased, gts012=True)
+    with pytest.raises(NotImplementedError,
+                       match='Phased variants are not supported'):
+        site_concordancy(call, phased, call_samples=['NA12878'],
+                         positive_samples=['BLANK'])
+
+
+def test_phased_call():
+    """ Test error message when the call vcf contains phased variants """
+    filename = 'tests/cases/gatk.vcf.gz'
+    phased = 'tests/cases/dummy_phased_blank.vcf.gz'
+    call = VCF(phased, gts012=True)
+    positive = VCF(filename, gts012=True)
+    with pytest.raises(NotImplementedError,
+                       match='Phased variants are not supported'):
+        site_concordancy(call, positive, call_samples=['BLANK'],
+                         positive_samples=['NA12878'])
