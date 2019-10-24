@@ -34,7 +34,10 @@ def parse_variants(ref: str, call: List[str], pos: List[str],
 
     # Here we count all alleles independently, also for the concordant calls
     for i, j in zip(call_variant, pos_variant):
-        if i == j:
+        # If one of the variants is partial no call
+        if i == '.' or j == '.':
+            results['alleles_no_call'] += 1
+        elif i == j:
             results['alleles_concordant'] += 1
         else:
             results['alleles_discordant'] += 1
@@ -143,7 +146,8 @@ def site_concordancy(call_vcf: VCF,
             p_gt = pos_record.gt_types[p_s]
             c_gt = call_record.gt_types[c_s]
 
-            # Is there missing data in one of the vcf files?
+            # Is one of the sites no call. This is only for fully no call
+            # sites. Partial no call site are handled in parse_variants
             if p_gt == 3 or c_gt == 3:
                 d['alleles_no_call'] += 2
                 continue
@@ -188,9 +192,13 @@ def site_concordancy(call_vcf: VCF,
             pos_alleles = [pos_record.REF] + pos_record.ALT
             cal_alleles = [call_record.REF] + call_record.ALT
 
-            # The third item in pos is a boolean indicating phasing
-            pos_gt = [pos_alleles[x] for x in pos[:2]]
-            cal_gt = [cal_alleles[x] for x in cal[:2]]
+            # The third item in pos is a boolean indicating phasing, so we
+            # don't use that
+            # No call is indicated by -1 in pyvcf2, so here we convert negative
+            # values to '.', which is what is used in the vcf to indicate no
+            # call
+            pos_gt = [pos_alleles[x] if x >= 0 else '.' for x in pos[:2]]
+            cal_gt = [cal_alleles[x] if x >= 0 else '.' for x in cal[:2]]
 
             # Parse the genotypes and add the results into d
             # We also need to know the reference call to determine if variants

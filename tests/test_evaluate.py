@@ -184,3 +184,79 @@ def test_haploid_call_file():
                        match='Non-diploid variants are not supported'):
         site_concordancy(call, positive, call_samples=['BLANK'],
                          positive_samples=['NA12878'])
+
+
+@pytest.fixture(scope='module')
+def partial_call_file():
+    """ Test statistics when the call vcf contains partial variants """
+    filename = 'tests/cases/gatk.vcf.gz'
+    partial = 'tests/cases/gatk_partial_call.vcf.gz'
+    call = VCF(partial, gts012=True)
+    positive = VCF(filename, gts012=True)
+    d, disc = site_concordancy(call, positive, call_samples=['BLANK'],
+                               positive_samples=['BLANK'], min_dp=0, min_gq=0)
+    return d
+
+
+def test_partial_call_total_sites(partial_call_file):
+    assert partial_call_file['total_sites'] == 37
+
+
+def test_partial_call_alleles_hom_ref_concordant(partial_call_file):
+    assert partial_call_file['alleles_hom_ref_concordant'] == 0
+
+
+def test_partial_call_alleles_het_concordant(partial_call_file):
+    assert partial_call_file['alleles_het_concordant'] == 0
+
+
+def test_partial_call_alleles_hom_alt_concordant(partial_call_file):
+    assert partial_call_file['alleles_hom_alt_concordant'] == 0
+
+
+def test_partial_call_alleles_concordant(partial_call_file):
+    assert partial_call_file['alleles_concordant'] == 6
+
+
+def test_partial_call_alleles_discordant(partial_call_file):
+    assert partial_call_file['alleles_discordant'] == 0
+
+
+def test_partial_call_alleles_no_call(partial_call_file):
+    assert partial_call_file['alleles_no_call'] == 68
+
+
+@pytest.fixture(scope='module')
+def partial_positive_file():
+    """ Test statistics when the call vcf contains partial variants """
+    filename = 'tests/cases/gatk.vcf.gz'
+    partial = 'tests/cases/gatk_partial_call.vcf.gz'
+    call = VCF(filename, gts012=True)
+    positive = VCF(partial, gts012=True)
+    d, disc = site_concordancy(call, positive, call_samples=['BLANK'],
+                               positive_samples=['BLANK'], min_dp=0, min_gq=0)
+    return d
+
+
+def test_partial_positive_total_sites(partial_positive_file):
+    assert partial_positive_file['total_sites'] == 6
+
+
+def test_partial_positive_hom_ref_concordant(partial_positive_file):
+    assert partial_positive_file['alleles_hom_ref_concordant'] == 0
+
+
+def test_partial_positive_het_concordant(partial_positive_file):
+    assert partial_positive_file['alleles_het_concordant'] == 0
+
+
+def test_partial_positive_hom_alt_concordant(partial_positive_file):
+    assert partial_positive_file['alleles_hom_alt_concordant'] == 0
+
+
+def test_partial_positive_concordant(partial_positive_file):
+    assert partial_positive_file['alleles_concordant'] == 6
+
+
+def test_partial_positive_no_call(partial_positive_file):
+    assert partial_positive_file['alleles_no_call'] == 6
