@@ -12,16 +12,17 @@ from types import SimpleNamespace
 from cyvcf2 import VCF
 
 
-def parse_variants(call: List[any], pos: List[any], results: Dict[str, int]):
+def parse_variants(ref: str, call: List[str], pos: List[str],
+                   results: Dict[str, int]):
     """ Parse the variants and add to results """
 
-    call_variant = sorted(call[0:2])
-    pos_variant = sorted(pos[0:2])
+    call_variant = sorted(call)
+    pos_variant = sorted(pos)
 
     # The types of concordant calls are counted separately
     if call_variant == pos_variant:
         # These variants are homozygous reference
-        if call_variant == [0, 0]:
+        if call_variant[0] == call_variant[1] and call_variant[0] == ref:
             results['alleles_hom_ref_concordant'] += 2
         # These variants are heterozygous, since they have different calls
         elif call_variant[0] != call_variant[1]:
@@ -182,8 +183,20 @@ def site_concordancy(call_vcf: VCF,
             if pos[2] or cal[2]:
                 raise NotImplementedError('Phased variants are not supported')
 
+            # Get the genotyped bases. There is a deprecationWarning when using
+            # gt_bases directly so we go via the alleles and the gt call
+            pos_alleles = [pos_record.REF] + pos_record.ALT
+            cal_alleles = [call_record.REF] + call_record.ALT
+
+            # The third item in pos is a boolean indicating phasing
+            pos_gt = [pos_alleles[x] for x in pos[:2]]
+            cal_gt = [cal_alleles[x] for x in cal[:2]]
+
             # Parse the genotypes and add the results into d
-            parse_variants(pos, cal, d)
+            # We also need to know the reference call to determine if variants
+            # are hom ref. For this, we take the positive vcf REF call to be
+            # the truth
+            parse_variants(pos_record.REF, pos_gt, cal_gt, d)
 
             # The current variant is discordant
             if d['alleles_discordant'] > discordant_count:
