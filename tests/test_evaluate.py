@@ -83,19 +83,7 @@ def test_no_call(BLANK_NA12878):
     assert BLANK_NA12878['alleles_no_call'] == 8
 
 
-@pytest.fixture(scope='module')
-def NA12878_BLANK():
-    filename = 'tests/cases/gatk.vcf.gz'
-    call = VCF(filename, gts012=True)
-    positive = VCF(filename, gts012=True)
-    d, disc = site_concordancy(call, positive, call_samples=['NA12878'],
-                               positive_samples=['BLANK'],
-                               min_gq=30, min_dp=20)
-    return d
-
-
-@pytest.fixture(scope='module')
-def NA12878_call_truncated():
+def test_truncated_call_file():
     """ When the call set is truncated, i.e. is missing variants which are
     present in the positive vcf file """
 
@@ -106,17 +94,10 @@ def NA12878_call_truncated():
     d, disc = site_concordancy(call, positive, call_samples=['NA12878'],
                                positive_samples=['BLANK'],
                                min_gq=30, min_dp=20)
-    return d
+    assert d['alleles_no_call'] == 12
 
 
-def test_truncated_called_no_call(NA12878_call_truncated):
-    """ Variants which are missing from the call vcf count towards
-    alleles_no_call """
-    assert NA12878_call_truncated['alleles_no_call'] == 12
-
-
-@pytest.fixture(scope='module')
-def NA12878_positive_truncated():
+def test_truncated_positive_file():
     """ When the positive set is truncated, i.e. the called vcf file contains
     variants which are absent from the positive vcf file """
     filename = 'tests/cases/gatk.vcf.gz'
@@ -126,16 +107,10 @@ def NA12878_positive_truncated():
     d, disc = site_concordancy(call, positive, call_samples=['NA12878'],
                                positive_samples=['BLANK'],
                                min_gq=30, min_dp=20)
-    return d
+    assert d['alleles_no_call'] == 0
 
 
-def test_truncated_positive_no_call(NA12878_positive_truncated):
-    """ Variants which are missing from the positive vcf do not count towards
-    alleles_no_call """
-    assert NA12878_positive_truncated['alleles_no_call'] == 0
-
-
-def test_phased_positive():
+def test_phased_positive_file():
     """ Test error message when the positive vcf contains phased variants """
     filename = 'tests/cases/gatk.vcf.gz'
     phased = 'tests/cases/dummy_phased_blank.vcf.gz'
@@ -147,7 +122,7 @@ def test_phased_positive():
                          positive_samples=['BLANK'])
 
 
-def test_phased_call():
+def test_phased_call_file():
     """ Test error message when the call vcf contains phased variants """
     filename = 'tests/cases/gatk.vcf.gz'
     phased = 'tests/cases/dummy_phased_blank.vcf.gz'
