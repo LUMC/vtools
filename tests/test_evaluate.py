@@ -132,3 +132,29 @@ def test_phased_call_file():
                        match='Phased variants are not supported'):
         site_concordancy(call, positive, call_samples=['BLANK'],
                          positive_samples=['NA12878'])
+
+
+def test_decomposed_positive_file():
+    """ Test error message when the positive vcf contains decomposed variants
+    """
+    filename = 'tests/cases/gatk.vcf.gz'
+    decomposed = 'tests/cases/dummy_decomposed.vcf.gz'
+    call = VCF(filename, gts012=True)
+    positive = VCF(decomposed, gts012=True)
+    with pytest.raises(NotImplementedError,
+                       match='Decomposed variants are not supported'):
+        site_concordancy(call, positive, call_samples=['BLANK'],
+                         positive_samples=['NA12878'])
+
+
+def test_decomposed_call_file():
+    """ Test error message when the positive vcf contains decomposed variants
+    """
+    filename = 'tests/cases/gatk.vcf.gz'
+    decomposed = 'tests/cases/dummy_decomposed.vcf.gz'
+    call = VCF(decomposed, gts012=True)
+    positive = VCF(filename, gts012=True)
+    with pytest.raises(NotImplementedError,
+                       match='Decomposed variants are not supported'):
+        site_concordancy(call, positive, call_samples=['BLANK'],
+                         positive_samples=['NA12878'])

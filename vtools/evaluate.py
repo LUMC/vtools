@@ -7,6 +7,7 @@ vtools.evaluate
 :license: MIT
 """
 from typing import List, Dict
+from types import SimpleNamespace
 
 from cyvcf2 import VCF
 
@@ -91,40 +92,48 @@ def site_concordancy(call_vcf: VCF,
         "alleles_low_qual": 0,
         "alleles_low_depth": 0
     }
+
+    # Keep track of the discordant sites
     discordant_count = 0
     discordant_records = list()
 
+    # Keep track of the previous record, to make sure the positive vcf file
+    # does not contain decomposed records
+    prev_record = SimpleNamespace()
+    prev_record.POS = -1
+    prev_record.CHROM = -1
+
     for pos_record in positive_vcf:
+        # Check to make sure the POS and CHROM are different from the previous
+        # variant
+        if (prev_record.POS == pos_record.POS and
+                prev_record.CHROM == pos_record.CHROM):
+            raise NotImplementedError('Decomposed variants are not supported')
+        else:
+            prev_record.POS = pos_record.POS
+            prev_record.CHROM = pos_record.CHROM
+
         d['total_sites'] += 1
         query_str = "{0}:{1}-{2}".format(
             pos_record.CHROM,
-            pos_record.start,
+            pos_record.start+1,
             pos_record.end
         )
 
-        it = call_vcf(query_str)
-        same = []
-        # If the vcf file has been decomposed, there can be multiple sites with
-        # the same CHROM and POS, which is why we have to iterate over all the
-        # sites that are returned
-        for it_record in it:
-            # We only want to consider sites that have the same CHROM, POS, REF
-            # and ALT as the positive vcf, since otherwise we might consider
-            # A/T and A/G as identical since they are both heterozygous
-            if (it_record.CHROM == pos_record.CHROM
-                    and it_record.POS == pos_record.POS
-                    and it_record.REF == pos_record.REF
-                    and it_record.ALT == pos_record.ALT):
-                same.append(it_record)
+        call_records = list(call_vcf(query_str))
 
         # If the variant is not present in the call vcf
-        if len(same) == 0:
+        if len(call_records) == 0:
             d['alleles_no_call'] += 2
-
-        if len(same) != 1:
             continue
 
-        call_record = same[0]
+        # If there are multiple variants with the same CHROM and POS, the
+        # variant in the call vcf file must have been decomposted
+        if len(call_records) > 1:
+            raise NotImplementedError('Decomposed variants are not supported')
+
+        # Now we know there is only one call record
+        call_record = call_records[0]
 
         d['sites_considered'] += 1
         d['alleles_considered'] += (2 * len(positive_samples))
