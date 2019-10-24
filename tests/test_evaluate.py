@@ -158,3 +158,29 @@ def test_decomposed_call_file():
                        match='Decomposed variants are not supported'):
         site_concordancy(call, positive, call_samples=['BLANK'],
                          positive_samples=['NA12878'])
+
+
+def test_haploid_positive_file():
+    """ Test error message when the positive vcf contains non-diploid variants
+    """
+    filename = 'tests/cases/gatk.vcf.gz'
+    haploid = 'tests/cases/dummy_haploid.vcf.gz'
+    call = VCF(filename, gts012=True)
+    positive = VCF(haploid, gts012=True)
+    with pytest.raises(NotImplementedError,
+                       match='Non-diploid variants are not supported'):
+        site_concordancy(call, positive, call_samples=['NA12878'],
+                         positive_samples=['BLANK'])
+
+
+def test_haploid_call_file():
+    """ Test error message when the call vcf contains non-diploid variants
+    """
+    filename = 'tests/cases/gatk.vcf.gz'
+    haploid = 'tests/cases/dummy_haploid.vcf.gz'
+    call = VCF(haploid, gts012=True)
+    positive = VCF(filename, gts012=True)
+    with pytest.raises(NotImplementedError,
+                       match='Non-diploid variants are not supported'):
+        site_concordancy(call, positive, call_samples=['BLANK'],
+                         positive_samples=['NA12878'])

@@ -174,6 +174,10 @@ def site_concordancy(call_vcf: VCF,
             pos = pos_record.genotypes[p_s]
             cal = call_record.genotypes[c_s]
 
+            # If the genotypes are not diploid
+            if len(pos) != 3 or len(cal) != 3:
+                raise NotImplementedError('Non-diploid variants are not '
+                                          'supported')
             # If the genotypes are phased
             if pos[2] or cal[2]:
                 raise NotImplementedError('Phased variants are not supported')
