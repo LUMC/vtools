@@ -261,7 +261,7 @@ def test_partial_positive_concordant(partial_positive_file):
 
 
 def test_partial_positive_no_call(partial_positive_file):
-    assert partial_positive_file['alleles_no_call'] == 6
+    assert partial_positive_file['alleles_no_call'] == 0
 
 
 @pytest.fixture(scope='module')

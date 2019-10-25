@@ -16,16 +16,16 @@ def parse_variants(ref: str, call: List[str], pos: List[str],
                    results: Dict[str, int]):
     """ Parse the variants and add to results """
 
-    call_variant = sorted(call)
-    pos_variant = sorted(pos)
+    call_variant = set(call)
+    pos_variant = set(pos)
 
     # The types of concordant calls are counted separately
     if call_variant == pos_variant:
         # These variants are homozygous reference
-        if call_variant[0] == call_variant[1] and call_variant[0] == ref:
+        if len(call_variant) == 1 and next(iter(call_variant)) == ref:
             results['alleles_hom_ref_concordant'] += 2
         # These variants are heterozygous, since they have different calls
-        elif call_variant[0] != call_variant[1]:
+        elif len(call_variant) > 1:
             results['alleles_het_concordant'] += 2
         # If they are not homozygous reference, and not heterozygous, they must
         # be homozygous alternative, for whichever alt allele they have
@@ -33,12 +33,14 @@ def parse_variants(ref: str, call: List[str], pos: List[str],
             results['alleles_hom_alt_concordant'] += 2
 
     # Here we count all alleles independently, also for the concordant calls
-    for i, j in zip(call_variant, pos_variant):
-        # If one of the variants is partial no call
-        if i == '.' or j == '.':
+    for allele in call:
+        if allele == '.':
             results['alleles_no_call'] += 1
-        elif i == j:
+        elif allele in pos:
             results['alleles_concordant'] += 1
+            # We cannot match an A/A call with A/G, so we need to remove the
+            # A call from the positive set once we have 'used' it
+            pos.remove(allele)
         else:
             results['alleles_discordant'] += 1
 
@@ -204,7 +206,7 @@ def site_concordancy(call_vcf: VCF,
             # We also need to know the reference call to determine if variants
             # are hom ref. For this, we take the positive vcf REF call to be
             # the truth
-            parse_variants(pos_record.REF, pos_gt, cal_gt, d)
+            parse_variants(pos_record.REF, cal_gt, pos_gt, d)
 
             # The current variant is discordant
             if d['alleles_discordant'] > discordant_count:
