@@ -1,6 +1,8 @@
 import pytest
+from collections import defaultdict
 
 from vtools.evaluate import site_concordancy
+from vtools.evaluate import parse_variants
 
 from cyvcf2 import VCF
 
@@ -340,3 +342,23 @@ def test_ref_alt_changed_call_concordant(ref_alt_changed_call):
 
 def test_ref_alt_changed_call_no_call(ref_alt_changed_call):
     assert ref_alt_changed_call['alleles_no_call'] == 54
+
+
+def test_parse_variants_no_call():
+    """ This should be counted as a single no call """
+    results = defaultdict(int)
+    call = ['.', 'A']
+    pos = ['A', 'G']
+
+    parse_variants('A', call, pos, results)
+    assert results['alleles_no_call'] == 1
+
+
+def test_parse_variants_concordant():
+    """ This should be counted as a single concordant allele """
+    results = defaultdict(int)
+    call = ['.', 'A']
+    pos = ['A', 'G']
+
+    parse_variants('A', call, pos, results)
+    assert results['alleles_concordant'] == 1
