@@ -260,3 +260,83 @@ def test_partial_positive_concordant(partial_positive_file):
 
 def test_partial_positive_no_call(partial_positive_file):
     assert partial_positive_file['alleles_no_call'] == 6
+
+
+@pytest.fixture(scope='module')
+def ref_alt_changed_positive():
+    """ Test statistics when the ref and alt have been changed.
+
+    Only the REF and ALT have been changed, and the gt calls for BLANK have
+    been updated to keep the actual genotype the same
+    """
+    filename = 'tests/cases/gatk.vcf.gz'
+    mixed = 'tests/cases/gatk_ref_alt_changed.vcf.gz'
+    positive = VCF(mixed, gts012=True)
+    call = VCF(filename, gts012=True)
+    d, disc = site_concordancy(call, positive, call_samples=['BLANK'],
+                               positive_samples=['BLANK'], min_dp=0, min_gq=0)
+    return d
+
+
+def test_ref_alt_changed_positive_total(ref_alt_changed_positive):
+    assert ref_alt_changed_positive['total_sites'] == 10
+
+
+def test_ref_alt_changed_positive_hom_ref_concordant(ref_alt_changed_positive):
+    assert ref_alt_changed_positive['alleles_hom_ref_concordant'] == 2
+
+
+def test_ref_alt_changed_positive_het_concordant(ref_alt_changed_positive):
+    assert ref_alt_changed_positive['alleles_het_concordant'] == 12
+
+
+def test_ref_alt_changed_positive_hom_alt_concordant(ref_alt_changed_positive):
+    assert ref_alt_changed_positive['alleles_hom_alt_concordant'] == 6
+
+
+def test_ref_alt_changed_positive_concordant(ref_alt_changed_positive):
+    assert ref_alt_changed_positive['alleles_concordant'] == 20
+
+
+def test_ref_alt_changed_positive_no_call(ref_alt_changed_positive):
+    assert ref_alt_changed_positive['alleles_no_call'] == 0
+
+
+@pytest.fixture(scope='module')
+def ref_alt_changed_call():
+    """ Test statistics when the ref and alt have been changed.
+
+    Only the REF and ALT have been changed, and the gt calls for BLANK have
+    been updated to keep the actual genotype the same
+    """
+    filename = 'tests/cases/gatk.vcf.gz'
+    mixed = 'tests/cases/gatk_ref_alt_changed.vcf.gz'
+    positive = VCF(filename, gts012=True)
+    call = VCF(mixed, gts012=True)
+    d, disc = site_concordancy(call, positive, call_samples=['BLANK'],
+                               positive_samples=['BLANK'], min_dp=0, min_gq=0)
+    return d
+
+
+def test_ref_alt_changed_call_total(ref_alt_changed_call):
+    assert ref_alt_changed_call['total_sites'] == 37
+
+
+def test_ref_alt_changed_call_hom_ref_concordant(ref_alt_changed_call):
+    assert ref_alt_changed_call['alleles_hom_ref_concordant'] == 8
+
+
+def test_ref_alt_changed_call_het_concordant(ref_alt_changed_call):
+    assert ref_alt_changed_call['alleles_het_concordant'] == 12
+
+
+def test_ref_alt_changed_call_hom_alt_concordant(ref_alt_changed_call):
+    assert ref_alt_changed_call['alleles_hom_alt_concordant'] == 0
+
+
+def test_ref_alt_changed_call_concordant(ref_alt_changed_call):
+    assert ref_alt_changed_call['alleles_concordant'] == 20
+
+
+def test_ref_alt_changed_call_no_call(ref_alt_changed_call):
+    assert ref_alt_changed_call['alleles_no_call'] == 54
