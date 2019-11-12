@@ -362,3 +362,34 @@ def test_parse_variants_concordant():
 
     parse_variants('A', call, pos, results)
     assert results['alleles_concordant'] == 1
+
+
+def test_known_concordant_RGQ():
+    """ 0/0 calls from GATK have RGQ annotation instead of GQ
+        These should be treated the same, so when RGQ is present it should be
+        used instead of the QC when filtering variants.
+    """
+    filename = 'tests/cases/gatk_RGQ.vcf.gz'
+    call = VCF(filename, gts012=True)
+    positive = VCF(filename, gts012=True)
+    d, disc = site_concordancy(call, positive, call_samples=['NA12878'],
+                               positive_samples=['NA12878'],
+                               min_gq=0, min_dp=0)
+    assert d['alleles_hom_ref_concordant'] == 14
+
+
+def test_known_concordant_RGQ_min_qc_100():
+    """ 0/0 calls from GATK have RGQ annotation instead of GQ
+        These should be treated the same, so when RGQ is present it should be
+        used instead of the QC when filtering variants.
+
+        The max value of both GQ and RGQ is 99, so filtering for GQ or RGQ >=
+        100 should give us 0 hom ref concordant variants.
+    """
+    filename = 'tests/cases/gatk_RGQ.vcf.gz'
+    call = VCF(filename, gts012=True)
+    positive = VCF(filename, gts012=True)
+    d, disc = site_concordancy(call, positive, call_samples=['NA12878'],
+                               positive_samples=['NA12878'],
+                               min_gq=100, min_dp=0)
+    assert d['alleles_hom_ref_concordant'] == 0

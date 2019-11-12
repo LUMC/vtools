@@ -45,6 +45,24 @@ def parse_variants(ref: str, call: List[str], pos: List[str],
             results['alleles_discordant'] += 1
 
 
+def RGQ_header_defined(vcf):
+    """ Determine whether the RGQ annotation is defined in the FORMAT header of
+    the vcf.
+
+    Since the header_iter does not return python dictionaries, we cannot easily
+    test if a certain key is set, hence the ugly code.
+    """
+    for header in vcf.header_iter():
+        try:
+            header['ID']
+        except KeyError:
+            continue
+        else:
+            if header['ID'] == 'RGQ':
+                return True
+    return False
+
+
 def site_concordancy(call_vcf: VCF,
                      positive_vcf: VCF,
                      call_samples: List[str],
@@ -98,6 +116,11 @@ def site_concordancy(call_vcf: VCF,
         "alleles_low_qual": 0,
         "alleles_low_depth": 0
     }
+
+    # Determine if the 'RQC' annotation is present in the FORMAT header
+    # This is needed for avoid getting an KeyError when we want to see if the
+    # RQC annotation is set for a given variant
+    RGQ_present = RGQ_header_defined(call_vcf)
 
     # Keep track of the discordant sites
     discordant_count = 0
@@ -155,8 +178,15 @@ def site_concordancy(call_vcf: VCF,
                 continue
 
             # Get the quality requirements for the call site
-            c_gq = call_record.gt_quals[c_s]
             c_dp = call_record.gt_depths[c_s]
+            # If the 'RGQ' is defined, which is the case for homref calls from
+            # GATK, use this value instead of 'GQ'
+            # See
+            # https://gatkforums.broadinstitute.org/gatk/discussion/9907/genotypegvcfs-no-records-in-vcf  # noqa
+            if RGQ_present and call_record.format('RGQ') is not None:
+                c_gq = call_record.format('RGQ')[0][0]
+            else:
+                c_gq = call_record.gt_quals[c_s]
 
             # Did we fail any of the quality control checks?
             # We use this variable since we want to count all quality checks
