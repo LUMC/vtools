@@ -393,3 +393,51 @@ def test_known_concordant_RGQ_min_qc_100():
                                positive_samples=['NA12878'],
                                min_gq=100, min_dp=0)
     assert d['alleles_hom_ref_concordant'] == 0
+
+
+@pytest.fixture(scope='module')
+def gatk_no_alt_in_call():
+    """ Test statistics when the ALT allele is missing from the called vcf
+
+    The ALT allele has been set to '.' for each variant, and the corresponding
+    GT has been set to 0/0 to generate valid variants.
+    """
+    filename = 'tests/cases/gatk.vcf.gz'
+    no_alt = 'tests/cases/gatk_no_alt.vcf.gz'
+    positive = VCF(filename, gts012=True)
+    call = VCF(no_alt, gts012=True)
+    d, disc = site_concordancy(call, positive, call_samples=['BLANK'],
+                               positive_samples=['BLANK'], min_dp=0, min_gq=0)
+    return d
+
+
+def test_no_alt_call_total_sites(gatk_no_alt_in_call):
+    assert gatk_no_alt_in_call['total_sites'] == 37
+
+
+def test_no_alt_call_sites_considered(gatk_no_alt_in_call):
+    assert gatk_no_alt_in_call['sites_considered'] == 37
+
+
+def test_no_alt_call_het_concordant(gatk_no_alt_in_call):
+    assert gatk_no_alt_in_call['alleles_het_concordant'] == 0
+
+
+def test_no_alt_call_hom_alt_concordant(gatk_no_alt_in_call):
+    assert gatk_no_alt_in_call['alleles_hom_alt_concordant'] == 0
+
+
+def test_no_alt_call_hom_ref_concordant(gatk_no_alt_in_call):
+    assert gatk_no_alt_in_call['alleles_hom_ref_concordant'] == 32
+
+
+def test_no_alt_call_alleles_concordant(gatk_no_alt_in_call):
+    assert gatk_no_alt_in_call['alleles_concordant'] == 46
+
+
+def test_no_alt_call_alleles_discordant(gatk_no_alt_in_call):
+    assert gatk_no_alt_in_call['alleles_discordant'] == 20
+
+
+def test_no_alt_call_alleles_no_call(gatk_no_alt_in_call):
+    assert gatk_no_alt_in_call['alleles_no_call'] == 8
