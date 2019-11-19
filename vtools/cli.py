@@ -9,6 +9,7 @@ vtools.cli
 import json
 import click
 from cyvcf2 import VCF, Writer
+import gzip
 
 from .evaluate import site_concordancy
 from .filter import FilterParams, FilterClass, Filterer
@@ -33,7 +34,7 @@ from .gcoverage import RefRecord, region_coverages
               required=True)
 @click.option("-s", "--stats", type=click.Path(writable=True),
               help="Path to output stats json file")
-@click.option("-dc", "--discordant", type=click.Path(writable=True),
+@click.option("-dvcf", "--discordant-vcf", type=click.Path(writable=True),
               help="Path to output discordant VCF file",
               required=False)
 @click.option("-mq", "--min-qual", type=float,
@@ -41,7 +42,7 @@ from .gcoverage import RefRecord, region_coverages
 @click.option("-md", "--min-depth", type=float,
               help="Minimum depth of variants to consider", default=0)
 def evaluate_cli(call_vcf, positive_vcf, call_samples, positive_samples,
-                 min_qual, min_depth, stats, discordant):
+                 min_qual, min_depth, stats, discordant_vcf):
     c_vcf = VCF(call_vcf, gts012=True)
     p_vcf = VCF(positive_vcf, gts012=True)
     st, disc = site_concordancy(c_vcf, p_vcf, call_samples,
@@ -53,11 +54,19 @@ def evaluate_cli(call_vcf, positive_vcf, call_samples, positive_samples,
         with click.open_file(stats, 'w') as fout:
             print(json.dumps(st), file=fout)
 
-    # If specified, write the discordant variants
-    if discordant:
-        with click.open_file(discordant, 'w') as fout:
+    # If there were discordand records, and a discordant-vcf should be written
+    if len(disc) > 0 and discordant_vcf:
+        with click.open_file(discordant_vcf, 'w') as fout:
+            # First, we write the vcf header
+            with gzip.open(call_vcf, 'rt') as fin:
+                for line in fin:
+                    if line.startswith('#'):
+                        fout.write(line)
+                    else:
+                        break
+            # Then we write the vcf records that were discordant
             for record in disc:
-                print(record, file=fout, end='')
+                fout.write(str(record))
 
 
 @click.command()
