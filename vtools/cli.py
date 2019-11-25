@@ -52,7 +52,7 @@ def evaluate_cli(call_vcf, positive_vcf, call_samples, positive_samples,
         print(json.dumps(st))
     else:
         with click.open_file(stats, 'w') as fout:
-            print(json.dumps(st), file=fout)
+            fout.write(json.dumps(st))
 
     # If there were discordand records, and a discordant-vcf should be written
     if len(disc) > 0 and discordant_vcf:
