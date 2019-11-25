@@ -161,7 +161,7 @@ Options:
   -s, --stats PATH              Path to output stats json file
   -dc, --discordant PATH        Path to output discordant VCF file
   -mq, --min-qual FLOAT         Minimum quality of variants to consider
-  -md, --min-depth FLOAT        Minimum depth of variants to consider
+  -md, --min-depth INTEGER      Minimum depth of variants to consider
   --help                        Show this message and exit.
 ```
 

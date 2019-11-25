@@ -39,7 +39,7 @@ from .gcoverage import RefRecord, region_coverages
               required=False)
 @click.option("-mq", "--min-qual", type=float,
               help="Minimum quality of variants to consider", default=30)
-@click.option("-md", "--min-depth", type=float,
+@click.option("-md", "--min-depth", type=int,
               help="Minimum depth of variants to consider", default=0)
 def evaluate_cli(call_vcf, positive_vcf, call_samples, positive_samples,
                  min_qual, min_depth, stats, discordant_vcf):
