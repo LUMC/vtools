@@ -35,7 +35,7 @@ from .gcoverage import RefRecord, region_coverages
 @click.option("-s", "--stats", type=click.Path(writable=True),
               help="Path to output stats json file")
 @click.option("-dvcf", "--discordant-vcf", type=click.Path(writable=True),
-              help="Path to output discordant VCF file",
+              help="Path to output gzipped discordant vcf file",
               required=False)
 @click.option("-mq", "--min-qual", type=float,
               help="Minimum quality of variants to consider", default=30)

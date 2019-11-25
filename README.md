@@ -159,7 +159,7 @@ Options:
   -ps, --positive-samples TEXT  Sample(s) in positive-vcf to consider. May be
                                 called multiple times  [required]
   -s, --stats PATH              Path to output stats json file
-  -dc, --discordant PATH        Path to output discordant VCF file
+  -dc, --discordant PATH        Path to output gzipped discordant vcf file
   -mq, --min-qual FLOAT         Minimum quality of variants to consider
   -md, --min-depth INTEGER      Minimum depth of variants to consider
   --help                        Show this message and exit.
