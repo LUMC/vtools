@@ -48,19 +48,13 @@ def parse_variants(ref: str, call: List[str], pos: List[str],
 def RGQ_header_defined(vcf):
     """ Determine whether the RGQ annotation is defined in the FORMAT header of
     the vcf.
-
-    Since the header_iter does not return python dictionaries, we cannot easily
-    test if a certain key is set, hence the ugly code.
     """
-    for header in vcf.header_iter():
-        try:
-            header['ID']
-        except KeyError:
-            continue
-        else:
-            if header['ID'] == 'RGQ':
-                return True
-    return False
+    try:
+        vcf.get_header_type('RGQ')
+    except KeyError:
+        return False
+    else:
+        return True
 
 
 def site_concordancy(call_vcf: VCF,
