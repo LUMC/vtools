@@ -4,4 +4,5 @@ build:
     - docker
   script:
     - pip install --upgrade pip setuptools wheel
-    - pip install '.'
+    - pip install cython numpy
+    - tox
