@@ -6,6 +6,7 @@ vtools.cli
 :copyright: (c) Leiden University Medical Center
 :license: MIT
 """
+import os
 import json
 import click
 from cyvcf2 import VCF, Writer
@@ -35,7 +36,7 @@ from .gcoverage import RefRecord, region_coverages
 @click.option("-s", "--stats", type=click.Path(writable=True),
               help="Path to output stats json file")
 @click.option("-dvcf", "--discordant-vcf", type=click.Path(writable=True),
-              help="Path to output gzipped discordant vcf file",
+              help="Path to output the discordant vcf file",
               required=False)
 @click.option("-mq", "--min-qual", type=float,
               help="Minimum quality of variants to consider", default=30)
@@ -56,6 +57,10 @@ def evaluate_cli(call_vcf, positive_vcf, call_samples, positive_samples,
 
     # If there were discordand records, and a discordant-vcf should be written
     if len(disc) > 0 and discordant_vcf:
+        # make sure the parent folder exists
+        parent_folder = os.path.dirname(discordant_vcf)
+        os.makedirs(parent_folder, exist_ok=True)
+
         with click.open_file(discordant_vcf, 'w') as fout:
             # First, we write the vcf header
             with gzip.open(call_vcf, 'rt') as fin:
