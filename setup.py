@@ -16,7 +16,7 @@ with open(readme_file) as desc_handle:
 
 setup(
     name="v-tools",
-    version="1.0.0-dev",
+    version="1.1.0-dev",
     description="Various tools operating over VCF files",
     long_description=long_desc,
     author="Sander Bollen",
@@ -31,7 +31,7 @@ setup(
     python_requires=">=3.6",
     zip_safe=False,
     include_package_data=True,
-    setup_requires=["cython"],
+    setup_requires=["cython", "numpy"],
     install_requires=[
         "click",
         "cyvcf2",
