@@ -16,11 +16,12 @@ with open(readme_file) as desc_handle:
 
 setup(
     name="v-tools",
-    version="1.1.0-dev",
+    version="1.1.0",
     description="Various tools operating over VCF files",
     long_description=long_desc,
-    author="Sander Bollen",
-    author_email="a.h.b.bollen@lumc.nl",
+    long_description_content_type="text/markdown",
+    author="Sander Bollen, Redmar van den Berg",
+    author_email="KG_bioinf@lumc.nl",
     url="https://git.lumc.nl/klinische-genetica/capture-lumc/vtools",
     license="MIT",
     package_dir={"": "src"},
