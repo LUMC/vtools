@@ -16,7 +16,7 @@ with open(readme_file) as desc_handle:
 
 setup(
     name="v-tools",
-    version="1.1.0",
+    version="1.1.1-dev",
     description="Various tools operating over VCF files",
     long_description=long_desc,
     long_description_content_type="text/markdown",
