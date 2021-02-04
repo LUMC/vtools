@@ -7,7 +7,7 @@ vtools.gcoverage
 :license: MIT
 """
 import itertools
-from typing import List, Tuple, NamedTuple, Iterable, Union, Generator
+from typing import Generator, Iterable, List, NamedTuple, Tuple, Union
 
 import cyvcf2
 
