@@ -33,17 +33,15 @@ def coverage_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000) -> Lis
     Therefore, there is a maxlen argument. Maximally `maxlen` values
     are returned.
     """
-    start = record.start
-    end = record.end
-    size = end - start
+    size = record.end - record.start
     try:
         dp = record.format("DP")[0][0]
     except TypeError:
         dp = 0
-    if size < maxlen:
-        return [dp]*(end-start)
+    if size <= maxlen:
+        return [dp] * size
     else:
-        return [dp]*maxlen
+        return [dp] * maxlen
 
 
 def gq_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000) -> List[int]:
@@ -52,12 +50,10 @@ def gq_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000) -> List[int]
     Therefore, there is a maxlen argument. Maximally `maxlen` values
     are returned.
     """
-    start = record.start
-    end = record.end
-    size = end - start
+    size = record.end - record.start
     gq = record.gt_quals[0]
-    if size < maxlen:
-        return [gq]*(end-start)
+    if size <= maxlen:
+        return [gq] * size
     else:
         return [gq]*maxlen
 
