@@ -117,6 +117,14 @@ class CovStats(NamedTuple):
                    *perc_at_least_dp,
                    *perc_at_least_gq)
 
+    @classmethod
+    def header(cls):
+        return "\t".join(cls.__annotations__.keys())
+
+    def __str__(self):
+        # 8 width, 2 decimals for nice right aligned values
+        return "\t".join("{:8.2f}".format(value) for value in self)
+
 
 class RefRecord(NamedTuple):
     gene: str
