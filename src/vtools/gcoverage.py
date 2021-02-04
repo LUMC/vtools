@@ -80,7 +80,11 @@ class CovStats(object):
                 chain.from_iterable(
                     (coverage_for_gvcf_record(x) for x in self.records)
                 ),
-                dtype=int
+                # Coverages higher than 65535 will be incorrectly recorded
+                # but this will save memory and these occurrences should be
+                # very rare. Since coverage is never below 0 use an unsigned
+                # integer.
+                dtype=np.uint16
             )
         return self.__coverages
 
@@ -91,7 +95,9 @@ class CovStats(object):
                 chain.from_iterable(
                     (gq_for_gvcf_record(x) for x in self.records)
                 ),
-                dtype=int
+                # GQ can never be higher than 99 and not lower than 0.
+                # uint8 with values 0-255 is appropriate.
+                dtype=np.uint8
             )
         return self.__gq_qualities
 
