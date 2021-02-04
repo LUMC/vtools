@@ -86,10 +86,10 @@ def fractions_at_least(values: np.ndarray,
 
 
 class CovStats(NamedTuple):
-    median_dp: float
-    median_gq: float
     mean_dp: float
     mean_gq: float
+    median_dp: float
+    median_gq: float
     perc_at_least_10_dp: float
     perc_at_least_20_dp: float
     perc_at_least_30_dp: float
@@ -111,10 +111,10 @@ class CovStats(NamedTuple):
         perc_at_least_gq = [fraction * 100 for fraction in
                             fractions_at_least(gq_qualities,
                                                (10, 20, 30, 50, 90))]
-        return cls(np.median(coverages),
-                   np.median(gq_qualities),
-                   np.mean(coverages),
+        return cls(np.mean(coverages),
                    qualmean(gq_qualities),
+                   np.median(coverages),
+                   np.median(gq_qualities),
                    *perc_at_least_dp,
                    *perc_at_least_gq)
 
@@ -123,7 +123,7 @@ class CovStats(NamedTuple):
         return "\t".join(cls.__annotations__.keys())
 
     def __str__(self):
-        # 8 width, 2 decimals for nice right aligned values
+        # 2 decimals is enough precision.
         return "\t".join("{:.2f}".format(value) for value in self)
 
 
