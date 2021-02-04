@@ -114,7 +114,7 @@ class CovStats(NamedTuple):
         return cls(np.median(coverages),
                    np.median(gq_qualities),
                    np.mean(coverages),
-                   np.mean(gq_qualities),
+                   qualmean(gq_qualities),
                    *perc_at_least_dp,
                    *perc_at_least_gq)
 
