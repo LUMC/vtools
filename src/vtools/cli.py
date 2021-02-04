@@ -127,10 +127,10 @@ def stats_cli(input):
 
 
 @click.command()
-@click.option("-I", "--input-gvcf",
-              type=click.Path(exists=True, readable=True),
-              required=True,
-              help="Path to input VCF file")
+@click.argument("input-gvcf",
+                nargs=-1,
+                type=click.Path(exists=True, readable=True),
+                required=True)
 @click.option("-R", "--refflat-file",
               type=click.Path(exists=True, readable=True),
               required=True,
@@ -139,5 +139,5 @@ def stats_cli(input):
               default=True,
               help="Collect metrics per exon or per transcript")
 def gcoverage_cli(input_gvcf, refflat_file, per_exon):
-    for line in refflat_and_gvcfs_to_tsv(refflat_file, [input_gvcf], per_exon):
+    for line in refflat_and_gvcfs_to_tsv(refflat_file, input_gvcf, per_exon):
         print(line)
