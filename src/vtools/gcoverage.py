@@ -202,11 +202,7 @@ def gvcf_records_to_coverage_array(gvcf_records: Iterable[cyvcf2.Variant],
     coverages = itertools.chain.from_iterable(
         coverage_for_gvcf_record(gvcf_record, maxlen)
         for gvcf_record in gvcf_records)
-    # Coverages higher than 65535 will be incorrectly recorded
-    # but this will save memory and these occurrences should be
-    # very rare. Since coverage is never below 0 use an unsigned
-    # integer.
-    return np.fromiter(coverages, dtype=np.uint16)
+    return np.fromiter(coverages, dtype=np.int)
 
 
 def gvcf_records_to_gq_array(gvcf_records: Iterable[cyvcf2.Variant],
@@ -215,10 +211,7 @@ def gvcf_records_to_gq_array(gvcf_records: Iterable[cyvcf2.Variant],
     coverages = itertools.chain.from_iterable(
         gq_for_gvcf_record(gvcf_record, maxlen)
         for gvcf_record in gvcf_records)
-    # GQ can never be higher than 99 and not lower than 0.
-    # uint8 with values 0-255 is appropriate. It is an integer in
-    # GVCF file format.
-    return np.fromiter(coverages, dtype=np.uint8)
+    return np.fromiter(coverages, dtype=np.int)
 
 
 def refflat_and_gvcfs_to_tsv(refflat_file: str,
