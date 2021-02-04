@@ -233,7 +233,7 @@ def refflat_and_gvcfs_to_tsv(refflat_file: str,
             gene = refflat_record.gene
             transcript = refflat_record.transcript
             for i, region in enumerate(refflat_record.exons):
-                records = feature_to_vcf_records([region], gvcf_readers)
+                records = list(feature_to_vcf_records([region], gvcf_readers))
                 coverage = gvcf_records_to_coverage_array(records)
                 gq_quals = gvcf_records_to_gq_array(records)
                 covstats = CovStats.from_coverages_and_gq_qualities(
@@ -244,7 +244,7 @@ def refflat_and_gvcfs_to_tsv(refflat_file: str,
         yield "gene\ttranscript\t" + CovStats.header()
         for refflat_record in file_to_refflat_records(refflat_file):
             regions = [x[1] for x in refflat_record.cds_exons]
-            records = feature_to_vcf_records(regions, gvcf_readers)
+            records = list(feature_to_vcf_records(regions, gvcf_readers))
             coverage = gvcf_records_to_coverage_array(records)
             gq_quals = gvcf_records_to_gq_array(records)
             covstats = CovStats.from_coverages_and_gq_qualities(
