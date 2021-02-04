@@ -16,9 +16,6 @@ from itertools import chain
 
 from typing import List, Optional, Tuple, NamedTuple, Iterable, Union
 
-from .optimized import amount_atleast
-
-
 Region = namedtuple("Region", ["chr", "start", "end"])
 
 
@@ -135,18 +132,6 @@ class CovStats(object):
     def mean_gq(self) -> float:
         return qualmean(self.gq_qualities)
 
-    def percent_atleast_dp(self, atleast) -> Optional[float]:
-        if len(self.coverages) == 0:
-            return None
-        k = amount_atleast(self.coverages, atleast)
-        return (k/len(self.coverages))*100
-
-    def percent_atleast_gq(self, atleast) -> Optional[float]:
-        if len(self.gq_qualities) == 0:
-            return None
-        k = amount_atleast(self.gq_qualities, atleast)
-        return (k/len(self.gq_qualities))*100
-
     @property
     def stats(self) -> dict:
         s = {
@@ -155,13 +140,19 @@ class CovStats(object):
             "median_gq": self.median_gq,
             "mean_gq": self.mean_gq
         }
-        for perc in (10, 20, 30, 50, 100):
+        coverage_boundaries = (10, 20, 30, 50, 100)
+        coverage_at_least = fractions_at_least(self.coverages,
+                                               coverage_boundaries)
+        for perc, fraction in zip(coverage_boundaries, coverage_at_least):
             key = "perc_at_least_{0}_dp".format(perc)
-            s[key] = self.percent_atleast_dp(perc)
+            s[key] = fraction * 100
 
-        for perc in (10, 20, 30, 50, 90):
+        gq_boundaries = (10, 20, 30, 50, 90)
+        gq_at_least = fractions_at_least(self.gq_qualities,
+                                         gq_boundaries)
+        for perc, fraction in zip(gq_boundaries, gq_at_least):
             key = "perc_at_least_{0}_gq".format(perc)
-            s[key] = self.percent_atleast_gq(perc)
+            s[key] = fraction * 100
         return s
 
 
