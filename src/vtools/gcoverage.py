@@ -117,7 +117,8 @@ class CovStats(object):
                     (gq_for_gvcf_record(x) for x in self.records)
                 ),
                 # GQ can never be higher than 99 and not lower than 0.
-                # uint8 with values 0-255 is appropriate.
+                # uint8 with values 0-255 is appropriate. It is an integer in
+                # GVCF file format.
                 dtype=np.uint8
             )
         return self.__gq_qualities
