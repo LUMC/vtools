@@ -7,7 +7,6 @@ vtools.gcoverage
 :license: MIT
 """
 import itertools
-from itertools import chain
 from typing import List, Optional, Tuple, NamedTuple, Iterable, Union, \
     Generator
 
@@ -85,51 +84,38 @@ def fractions_at_least(values: np.ndarray,
     return cumulative_fractions[1:]
 
 
-class CovStats(object):
-    def __init__(self,
-                 coverages: Iterable[int],
-                 gq_qualities: Iterable[int]):
-        self.coverages = None
-        self.gq_qualities = None
+class CovStats(NamedTuple):
+    median_dp: float
+    median_gq: float
+    mean_dp: float
+    mean_gq: float
+    perc_at_least_10_dp: float
+    perc_at_least_20_dp: float
+    perc_at_least_30_dp: float
+    perc_at_least_50_dp: float
+    perc_at_least_100_dp: float
+    perc_at_least_10_gq: float
+    perc_at_least_20_gq: float
+    perc_at_least_30_gq: float
+    perc_at_least_50_gq: float
+    perc_at_least_90_gq: float
 
-    @property
-    def median_cov(self) -> float:
-        return np.median(self.coverages)
-
-    @property
-    def mean_cov(self) -> float:
-        return np.mean(self.coverages)
-
-    @property
-    def median_gq(self) -> float:
-        return np.median(self.gq_qualities)
-
-    @property
-    def mean_gq(self) -> float:
-        return qualmean(self.gq_qualities)
-
-    @property
-    def stats(self) -> dict:
-        s = {
-            "median_dp": self.median_cov,
-            "mean_dp": self.mean_cov,
-            "median_gq": self.median_gq,
-            "mean_gq": self.mean_gq
-        }
-        coverage_boundaries = (10, 20, 30, 50, 100)
-        coverage_at_least = fractions_at_least(self.coverages,
-                                               coverage_boundaries)
-        for perc, fraction in zip(coverage_boundaries, coverage_at_least):
-            key = "perc_at_least_{0}_dp".format(perc)
-            s[key] = fraction * 100
-
-        gq_boundaries = (10, 20, 30, 50, 90)
-        gq_at_least = fractions_at_least(self.gq_qualities,
-                                         gq_boundaries)
-        for perc, fraction in zip(gq_boundaries, gq_at_least):
-            key = "perc_at_least_{0}_gq".format(perc)
-            s[key] = fraction * 100
-        return s
+    @classmethod
+    def from_coverages_and_gq_qualities(cls,
+                                        coverages: np.ndarray,
+                                        gq_qualities: np.ndarray):
+        perc_at_least_dp = [fraction * 100 for fraction in
+                            fractions_at_least(coverages,
+                                               (10, 20, 30, 50, 100))]
+        perc_at_least_gq = [fraction * 100 for fraction in
+                            fractions_at_least(gq_qualities,
+                                               (10, 20, 30, 50, 90))]
+        return cls(np.median(coverages),
+                   np.median(gq_qualities),
+                   np.mean(coverages),
+                   np.mean(gq_qualities),
+                   *perc_at_least_dp,
+                   *perc_at_least_gq)
 
 
 class RefRecord(NamedTuple):
