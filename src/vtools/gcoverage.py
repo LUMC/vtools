@@ -7,16 +7,22 @@ vtools.gcoverage
 :license: MIT
 """
 import itertools
+from itertools import chain
+from typing import List, Optional, Tuple, NamedTuple, Iterable, Union, \
+    Generator
 
 import cyvcf2
+
 import numpy as np
 
-from collections import namedtuple
-from itertools import chain
 
-from typing import List, Optional, Tuple, NamedTuple, Iterable, Union
+class Region(NamedTuple):
+    chr: str
+    start: int
+    end: int
 
-Region = namedtuple("Region", ["chr", "start", "end"])
+    def __str__(self):
+        return "{0}:{1}-{2}".format(self.chr, self.start, self.end)
 
 
 def coverage_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000) -> List[int]:
@@ -211,11 +217,32 @@ class RefRecord(NamedTuple):
         return regs
 
 
+def file_to_refflat_records(filename: str) -> Generator[RefRecord, None, None]:
+    with open(filename, "rt") as file_h:
+        for line in file_h:
+            yield RefRecord.from_line(line)
+
+
+def feature_to_vcf_records(feature: List[Region], sample_vcfs: List[cyvcf2.VCF]
+                           ) -> Generator[cyvcf2.Variant, None, None]:
+    for sample_vcf in sample_vcfs:
+        for region in feature:
+            for record in sample_vcf(str(region)):
+                yield record
+
+
+def vcf_records_to_coverage_array(vcf_records: Iterable[cyvcf2.Variant],
+                                  maxlen: int = 15000
+                                 ) -> np.ndarray:
+    coverages = itertools.chain(coverage_for_gvcf_record(vcf_record, maxlen)
+                                for vcf_record in vcf_records)
+    return np.fromiter(coverages, dtype=np.uint16)
+
+
 def region_coverages(reader: cyvcf2.VCF, regions: List[Region]) -> Optional[dict]:
     records = []
     for region in regions:
-        reg_str = "{0}:{1}-{2}".format(region.chr, region.start, region.end)
-        it = reader(reg_str)
+        it = reader(str(region))
         records += list(it)
 
     if len(records) == 0:
