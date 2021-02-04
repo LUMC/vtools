@@ -7,8 +7,7 @@ vtools.gcoverage
 :license: MIT
 """
 import itertools
-from typing import List, Optional, Tuple, NamedTuple, Iterable, Union, \
-    Generator
+from typing import List, Tuple, NamedTuple, Iterable, Union, Generator
 
 import cyvcf2
 
@@ -24,7 +23,8 @@ class Region(NamedTuple):
         return "{0}:{1}-{2}".format(self.chr, self.start, self.end)
 
 
-def coverage_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000) -> List[int]:
+def coverage_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000
+                             ) -> List[int]:
     """
     Get coverage for gvcf record per base
 
@@ -43,7 +43,8 @@ def coverage_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000) -> Lis
         return [dp] * maxlen
 
 
-def gq_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000) -> List[int]:
+def gq_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000
+                       ) -> List[int]:
     """
     Some records may be huge, especially those around centromeres.
     Therefore, there is a maxlen argument. Maximally `maxlen` values
@@ -208,8 +209,8 @@ def gvcf_records_to_coverage_array(gvcf_records: Iterable[cyvcf2.Variant],
 
 
 def gvcf_records_to_gq_array(gvcf_records: Iterable[cyvcf2.Variant],
-                                   maxlen: int = 15000
-                                   ) -> np.ndarray:
+                             maxlen: int = 15000
+                             ) -> np.ndarray:
     coverages = itertools.chain(gq_for_gvcf_record(gvcf_record, maxlen)
                                 for gvcf_record in gvcf_records)
     # GQ can never be higher than 99 and not lower than 0.
@@ -218,13 +219,33 @@ def gvcf_records_to_gq_array(gvcf_records: Iterable[cyvcf2.Variant],
     return np.fromiter(coverages, dtype=np.uint8)
 
 
-def region_coverages(reader: cyvcf2.VCF, regions: List[Region]) -> Optional[dict]:
-    records = []
-    for region in regions:
-        it = reader(str(region))
-        records += list(it)
-
-    if len(records) == 0:
-        return CovStats([]).stats
-
-    return CovStats(records).stats
+def refflat_and_gvcfs_to_tsv(refflat_file: str,
+                             gvcfs: Iterable[str],
+                             per_exon=False
+                             ) -> Generator[str, None, None]:
+    gvcf_readers = [cyvcf2.VCF(gvcf) for gvcf in gvcfs]
+    if per_exon:
+        yield "gene\ttranscript\texon\t" + CovStats.header()
+        for refflat_record in file_to_refflat_records(refflat_file):
+            total_exons = len(refflat_record.exons)
+            gene = refflat_record.gene
+            transcript = refflat_record.transcript
+            for i, region in enumerate(refflat_record.exons):
+                records = feature_to_vcf_records([region], gvcf_readers)
+                coverage = gvcf_records_to_coverage_array(records)
+                gq_quals = gvcf_records_to_gq_array(records)
+                covstats = CovStats.from_coverages_and_gq_qualities(
+                    coverage, gq_quals)
+                exon = i + 1 if refflat_record.forward else total_exons - i
+                yield f"{gene}\t{transcript}\t{exon}\t{str(covstats)}"
+    else:
+        yield "gene\ttranscript\t" + CovStats.header()
+        for refflat_record in file_to_refflat_records(refflat_file):
+            regions = [x[1] for x in refflat_record.cds_exons]
+            records = feature_to_vcf_records(regions, gvcf_readers)
+            coverage = gvcf_records_to_coverage_array(records)
+            gq_quals = gvcf_records_to_gq_array(records)
+            covstats = CovStats.from_coverages_and_gq_qualities(
+                    coverage, gq_quals)
+            yield (f"{refflat_record.gene}\t{refflat_record.transcript}\t"
+                   f"{str(covstats)}")
