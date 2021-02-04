@@ -80,44 +80,17 @@ def fractions_at_least(values: np.ndarray,
     reverse_cumulative_counts = list(itertools.accumulate(reversed(counts)))
     cumulative_fractions = [count / total for count in
                             reversed(reverse_cumulative_counts)]
-    # We are not interested in the lowest bin. It will be 1.000_ anyway.
+    # We are not interested in the lowest bin. It will be 1.000 anyway as it
+    # contains all samples.
     return cumulative_fractions[1:]
 
 
 class CovStats(object):
-    def __init__(self, records):
-        self.records = records
-        self.__coverages = None
-        self.__gq_qualities = None
-
-    @property
-    def coverages(self) -> np.ndarray:
-        if self.__coverages is None:
-            self.__coverages = np.fromiter(
-                chain.from_iterable(
-                    (coverage_for_gvcf_record(x) for x in self.records)
-                ),
-                # Coverages higher than 65535 will be incorrectly recorded
-                # but this will save memory and these occurrences should be
-                # very rare. Since coverage is never below 0 use an unsigned
-                # integer.
-                dtype=np.uint16
-            )
-        return self.__coverages
-
-    @property
-    def gq_qualities(self) -> np.ndarray:
-        if self.__gq_qualities is None:
-            self.__gq_qualities = np.fromiter(
-                chain.from_iterable(
-                    (gq_for_gvcf_record(x) for x in self.records)
-                ),
-                # GQ can never be higher than 99 and not lower than 0.
-                # uint8 with values 0-255 is appropriate. It is an integer in
-                # GVCF file format.
-                dtype=np.uint8
-            )
-        return self.__gq_qualities
+    def __init__(self,
+                 coverages: Iterable[int],
+                 gq_qualities: Iterable[int]):
+        self.coverages = None
+        self.gq_qualities = None
 
     @property
     def median_cov(self) -> float:
