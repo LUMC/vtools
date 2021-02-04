@@ -228,12 +228,27 @@ def feature_to_vcf_records(feature: List[Region], sample_vcfs: List[cyvcf2.VCF]
                 yield record
 
 
-def vcf_records_to_coverage_array(vcf_records: Iterable[cyvcf2.Variant],
-                                  maxlen: int = 15000
-                                 ) -> np.ndarray:
-    coverages = itertools.chain(coverage_for_gvcf_record(vcf_record, maxlen)
-                                for vcf_record in vcf_records)
+def gvcf_records_to_coverage_array(gvcf_records: Iterable[cyvcf2.Variant],
+                                   maxlen: int = 15000
+                                   ) -> np.ndarray:
+    coverages = itertools.chain(coverage_for_gvcf_record(gvcf_record, maxlen)
+                                for gvcf_record in gvcf_records)
+    # Coverages higher than 65535 will be incorrectly recorded
+    # but this will save memory and these occurrences should be
+    # very rare. Since coverage is never below 0 use an unsigned
+    # integer.
     return np.fromiter(coverages, dtype=np.uint16)
+
+
+def gvcf_records_to_gq_array(gvcf_records: Iterable[cyvcf2.Variant],
+                                   maxlen: int = 15000
+                                   ) -> np.ndarray:
+    coverages = itertools.chain(gq_for_gvcf_record(gvcf_record, maxlen)
+                                for gvcf_record in gvcf_records)
+    # GQ can never be higher than 99 and not lower than 0.
+    # uint8 with values 0-255 is appropriate. It is an integer in
+    # GVCF file format.
+    return np.fromiter(coverages, dtype=np.uint8)
 
 
 def region_coverages(reader: cyvcf2.VCF, regions: List[Region]) -> Optional[dict]:
