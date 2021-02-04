@@ -6,6 +6,7 @@ vtools.gcoverage
 :copyright: (c) 2018 Leiden University Medical Center
 :license: MIT
 """
+import itertools
 
 import cyvcf2
 import numpy as np
@@ -13,7 +14,7 @@ import numpy as np
 from collections import namedtuple
 from itertools import chain
 
-from typing import List, Optional, Tuple, NamedTuple
+from typing import List, Optional, Tuple, NamedTuple, Iterable, Union
 
 from .optimized import amount_atleast
 
@@ -65,6 +66,23 @@ def qualmean(quals: np.ndarray) -> float:
     https://git.lumc.nl/klinische-genetica/capture-lumc/vtools/issues/3
     """
     return -10*np.log10(np.mean(np.power(10, quals/-10)))
+
+
+def fractions_at_least(values: np.ndarray,
+                       boundaries: Iterable[Union[int, float]]
+                       ) -> List[float]:
+    total = values.size
+    bins = [0] + list(boundaries) + [np.iinfo(values.dtype).max]
+    counts, _ = np.histogram(values, bins)
+    # Example 10,20,30,40. Will give us bins 0-9,10-19,20-29,30-39,40-max.
+    # 40-max contains the count of everything at least 40. Everything at least
+    # 30 should include bins 30-39 and 40-max. Etc. The results we seek are
+    # therefore cumulative from high to low. Hence the below function.
+    reverse_cumulative_counts = list(itertools.accumulate(reversed(counts)))
+    cumulative_fractions = [count / total for count in
+                            reversed(reverse_cumulative_counts)]
+    # We are not interested in the lowest bin. It will be 1.000_ anyway.
+    return cumulative_fractions[1:]
 
 
 class CovStats(object):
