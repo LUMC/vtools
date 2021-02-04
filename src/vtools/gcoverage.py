@@ -124,7 +124,7 @@ class CovStats(NamedTuple):
 
     def __str__(self):
         # 8 width, 2 decimals for nice right aligned values
-        return "\t".join("{:8.2f}".format(value) for value in self)
+        return "\t".join("{:.2f}".format(value) for value in self)
 
 
 class RefRecord(NamedTuple):
