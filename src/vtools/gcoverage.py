@@ -181,7 +181,7 @@ def gvcf_records_to_coverage_and_quality_arrays(
         except TypeError:
             dp = 0
         gq = record.gt_quals[0]
-        record_size = min(size, maxlen)
+        record_size = min(size, maxlen)  # Limit size to maxlen
         depths.extend([dp] * record_size)
         gen_quals.extend([gq] * record_size)
     return np.array(depths, dtype=np.int), np.array(gen_quals, dtype=np.int)
