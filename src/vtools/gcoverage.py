@@ -23,41 +23,6 @@ class Region(NamedTuple):
         return "{0}:{1}-{2}".format(self.chr, self.start, self.end)
 
 
-def coverage_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000
-                             ) -> List[int]:
-    """
-    Get coverage for gvcf record per base
-
-    Some records may be huge, especially those around centromeres.
-    Therefore, there is a maxlen argument. Maximally `maxlen` values
-    are returned.
-    """
-    size = record.end - record.start
-    try:
-        dp = record.format("DP")[0][0]
-    except TypeError:
-        dp = 0
-    if size <= maxlen:
-        return [dp] * size
-    else:
-        return [dp] * maxlen
-
-
-def gq_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000
-                       ) -> List[int]:
-    """
-    Some records may be huge, especially those around centromeres.
-    Therefore, there is a maxlen argument. Maximally `maxlen` values
-    are returned.
-    """
-    size = record.end - record.start
-    gq = record.gt_quals[0]
-    if size <= maxlen:
-        return [gq] * size
-    else:
-        return [gq]*maxlen
-
-
 def qualmean(quals: np.ndarray) -> float:
     """
     Credit:
@@ -196,22 +161,30 @@ def feature_to_vcf_records(feature: List[Region], sample_vcfs: List[cyvcf2.VCF]
                 yield record
 
 
-def gvcf_records_to_coverage_array(gvcf_records: Iterable[cyvcf2.Variant],
-                                   maxlen: int = 15000
-                                   ) -> np.ndarray:
-    coverages = itertools.chain.from_iterable(
-        coverage_for_gvcf_record(gvcf_record, maxlen)
-        for gvcf_record in gvcf_records)
-    return np.fromiter(coverages, dtype=np.int)
+def gvcf_records_to_coverage_and_quality_arrays(
+        gvcf_records: Iterable[cyvcf2.Variant],
+        maxlen: int = 15000
+        ) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Get coverage and genome quality for all gvcf records per base
 
-
-def gvcf_records_to_gq_array(gvcf_records: Iterable[cyvcf2.Variant],
-                             maxlen: int = 15000
-                             ) -> np.ndarray:
-    coverages = itertools.chain.from_iterable(
-        gq_for_gvcf_record(gvcf_record, maxlen)
-        for gvcf_record in gvcf_records)
-    return np.fromiter(coverages, dtype=np.int)
+    Some records may be huge, especially those around centromeres.
+    Therefore, there is a maxlen argument. Maximally `maxlen` values
+    are used per variant.
+    """
+    depths: List[int] = []
+    gen_quals: List[int] = []
+    for record in gvcf_records:
+        size = record.end - record.start
+        try:
+            dp = record.format("DP")[0][0]
+        except TypeError:
+            dp = 0
+        gq = record.gt_quals[0]
+        record_size = min(size, maxlen)
+        depths.extend([dp] * record_size)
+        gen_quals.extend([gq] * record_size)
+    return np.array(depths, dtype=np.int), np.array(gen_quals, dtype=np.int)
 
 
 def refflat_and_gvcfs_to_tsv(refflat_file: str,
@@ -226,9 +199,9 @@ def refflat_and_gvcfs_to_tsv(refflat_file: str,
             gene = refflat_record.gene
             transcript = refflat_record.transcript
             for i, region in enumerate(refflat_record.exons):
-                records = list(feature_to_vcf_records([region], gvcf_readers))
-                coverage = gvcf_records_to_coverage_array(records)
-                gq_quals = gvcf_records_to_gq_array(records)
+                records = feature_to_vcf_records([region], gvcf_readers)
+                coverage, gq_quals = (
+                    gvcf_records_to_coverage_and_quality_arrays(records))
                 covstats = CovStats.from_coverages_and_gq_qualities(
                     coverage, gq_quals)
                 exon = i + 1 if refflat_record.forward else total_exons - i
@@ -237,9 +210,9 @@ def refflat_and_gvcfs_to_tsv(refflat_file: str,
         yield "gene\ttranscript\t" + CovStats.header()
         for refflat_record in file_to_refflat_records(refflat_file):
             regions = [x[1] for x in refflat_record.cds_exons]
-            records = list(feature_to_vcf_records(regions, gvcf_readers))
-            coverage = gvcf_records_to_coverage_array(records)
-            gq_quals = gvcf_records_to_gq_array(records)
+            records = feature_to_vcf_records(regions, gvcf_readers)
+            coverage, gq_quals = (
+                gvcf_records_to_coverage_and_quality_arrays(records))
             covstats = CovStats.from_coverages_and_gq_qualities(
                     coverage, gq_quals)
             yield (f"{refflat_record.gene}\t{refflat_record.transcript}\t"
