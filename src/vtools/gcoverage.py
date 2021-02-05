@@ -184,7 +184,9 @@ def gvcf_records_to_coverage_and_quality_arrays(
         record_size = min(size, maxlen)  # Limit size to maxlen
         depths.extend([dp] * record_size)
         gen_quals.extend([gq] * record_size)
-    return np.array(depths, dtype=np.int), np.array(gen_quals, dtype=np.int)
+    # np.fromiter is faster than np.array in this case
+    return (np.fromiter(depths, dtype=np.int),
+            np.fromiter(gen_quals, dtype=np.int))
 
 
 def refflat_and_gvcfs_to_tsv(refflat_file: str,
