@@ -33,21 +33,13 @@ def qualmean(quals: np.ndarray) -> float:
 
 
 def fractions_at_least(values: np.ndarray,
-                       boundaries: Iterable[Union[int, float]]
+                       values_at_least: Iterable[Union[int, float]]
                        ) -> List[float]:
     total = values.size
-    bins = [0] + list(boundaries) + [np.iinfo(values.dtype).max]
-    counts, _ = np.histogram(values, bins)
-    # Example 10,20,30,40. Will give us bins 0-9,10-19,20-29,30-39,40-max.
-    # 40-max contains the count of everything at least 40. Everything at least
-    # 30 should include bins 30-39 and 40-max. Etc. The results we seek are
-    # therefore cumulative from high to low. Hence the below function.
-    reverse_cumulative_counts = list(itertools.accumulate(reversed(counts)))
-    cumulative_fractions = [count / total for count in
-                            reversed(reverse_cumulative_counts)]
-    # We are not interested in the lowest bin. It will be 1.000 anyway as it
-    # contains all samples.
-    return cumulative_fractions[1:]
+    # numpy.greater_equal returns a list of Booleans. But since true==1
+    # these can be summed for the total count.
+    return([np.greater_equal(values, at_least).sum() / total
+            for at_least in values_at_least])
 
 
 class CovStats(NamedTuple):

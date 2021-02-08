@@ -16,7 +16,7 @@ def test_fractions_at_least():
         94, 95, 95, 95, 96, 96, 97, 97]
 
     fractions = fractions_at_least(np.array(hundred_numbers, dtype=np.uint8),
-                                   boundaries=(10, 20, 30, 40, 50))
+                                   values_at_least=(10, 20, 30, 40, 50))
     assert fractions[0] == 91 / 100
     assert fractions[1] == 86 / 100
     assert fractions[2] == 73 / 100
