@@ -15,6 +15,7 @@ import numpy as np
 
 
 class Region(NamedTuple):
+    """Represents a VCF region"""
     chr: str
     start: int
     end: int
@@ -35,6 +36,8 @@ def qualmean(quals: np.ndarray) -> float:
 def fractions_at_least(values: np.ndarray,
                        values_at_least: Iterable[Union[int, float]]
                        ) -> List[float]:
+    """Counts which fraction of the values is higher than the value in
+    values at least."""
     total = values.size
     # numpy.greater_equal returns a list of Booleans. But since true==1
     # these can be summed for the total count.
@@ -43,6 +46,7 @@ def fractions_at_least(values: np.ndarray,
 
 
 class CovStats(NamedTuple):
+    """Class representing a line in a CovStats TSV."""
     mean_dp: float
     mean_gq: float
     median_dp: float
@@ -62,6 +66,8 @@ class CovStats(NamedTuple):
     def from_coverages_and_gq_qualities(cls,
                                         coverages: np.ndarray,
                                         gq_qualities: np.ndarray):
+        """Generate a CovStats object from an array of coverages and genome
+        qualities."""
         perc_at_least_dp = [fraction * 100 for fraction in
                             fractions_at_least(coverages,
                                                (10, 20, 30, 50, 100))]
