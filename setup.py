@@ -8,7 +8,7 @@ setup.py
 """
 from os.path import abspath, dirname, join
 
-from setuptools import setup, find_packages, Extension
+from setuptools import Extension, find_packages, setup
 
 readme_file = join(abspath(dirname(__file__)), "README.md")
 with open(readme_file) as desc_handle:

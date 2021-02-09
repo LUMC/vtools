@@ -6,10 +6,9 @@ vtools.gcoverage
 :copyright: (c) 2018 Leiden University Medical Center
 :license: MIT
 """
-import itertools
 from typing import Generator, Iterable, List, NamedTuple, Tuple, Union
 
-import cyvcf2
+import cyvcf2  # type: ignore
 
 import numpy as np
 
@@ -74,10 +73,10 @@ class CovStats(NamedTuple):
         perc_at_least_gq = [fraction * 100 for fraction in
                             fractions_at_least(gq_qualities,
                                                (10, 20, 30, 50, 90))]
-        return cls(np.mean(coverages),
+        return cls(float(np.mean(coverages)),
                    qualmean(gq_qualities),
-                   np.median(coverages),
-                   np.median(gq_qualities),
+                   float(np.median(coverages)),
+                   float(np.median(gq_qualities)),
                    *perc_at_least_dp,
                    *perc_at_least_gq)
 
@@ -184,8 +183,10 @@ def gvcf_records_to_coverage_and_quality_arrays(
         gen_quals.extend([gq] * record_size)
     # np.fromiter is faster than np.array in this case. Also specifying the
     # length allows allocating the array at once in memory, which is faster.
-    return (np.fromiter(depths, dtype=np.int, count=len(depths)),
-            np.fromiter(gen_quals, dtype=np.int, count=len(gen_quals)))
+    # Use int64 which is compatible with python integer. Using smaller
+    # integers does not improve performance noticably.
+    return (np.fromiter(depths, dtype=np.int64, count=len(depths)),
+            np.fromiter(gen_quals, dtype=np.int64, count=len(gen_quals)))
 
 
 def refflat_and_gvcfs_to_tsv(refflat_file: str,

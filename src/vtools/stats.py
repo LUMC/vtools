@@ -7,15 +7,12 @@ vtools.stats
 :license: MIT
 """
 
-import cyvcf2
-import numpy
 import json
-
-from tqdm import tqdm
-
 from collections import Counter
 
-from .optimized import Sample
+import cyvcf2  # type: ignore
+
+from .optimized import Sample  # type: ignore
 
 
 def gen_chrom_counter(vcf_reader):
@@ -52,11 +49,10 @@ class Stats(object):
             "vcf_path": self.path,
             "total_variants": self.total_variants,
             "samples": [s.as_dict for s in self.samples],
-            "per_chromosome_variants": {k: v for k, v in self.chrom_counter.items()}
+            "per_chromosome_variants": {k: v for k, v in
+                                        self.chrom_counter.items()}
         }
 
     @property
     def as_json(self):
         return json.dumps(self.as_dict, sort_keys=True, indent=4)
-
-

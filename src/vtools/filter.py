@@ -6,12 +6,14 @@ vtools.filter
 :copyright: (c) 2018 Leiden University Medical Center
 :license: MIT
 """
-from cyvcf2 import VCF, Writer
 
-import json
 import enum
+import json
 
-from .optimized import get_af
+from cyvcf2 import VCF  # type: ignore
+
+from .optimized import get_af  # type: ignore
+
 
 class FilterClass(enum.Enum):
     NON_CANONICAL = {
@@ -85,7 +87,8 @@ class FilterParams(object):
     @property
     def gnomad_vcf(self):
         if self.__gnomad_vcf is None:
-            self.__gnomad_vcf = VCF(self.params_dict['gnomad_vcf'], gts012=True)
+            self.__gnomad_vcf = VCF(self.params_dict['gnomad_vcf'],
+                                    gts012=True)
         return self.__gnomad_vcf
 
     @property
@@ -109,7 +112,8 @@ class Filterer(object):
         self.index = index
         self.immediate_return = immediate_return
 
-        self.canonical_chroms = {"M", "X", "Y"}.union(set(map(str, range(0, 23))))
+        self.canonical_chroms = {"M", "X", "Y"}.union(
+            set(map(str, range(0, 23))))
 
     def __next__(self):
         record = next(self.vcf_it)
@@ -144,7 +148,7 @@ class Filterer(object):
 
         if self.filters.max_gonl_af is not None:
             gonl_af = get_af(record, self.filters.gonl_vcf,
-                                  self.filters.gonl_af)
+                             self.filters.gonl_af)
             if gonl_af > self.filters.max_gonl_af:
                 if self.immediate_return:
                     return record, [FilterClass.TOO_HIGH_GONL_AF]
@@ -152,7 +156,7 @@ class Filterer(object):
 
         if self.filters.max_gnomad_af is not None:
             gnomad_af = get_af(record, self.filters.gnomad_vcf,
-                                  self.filters.gnomad_af)
+                               self.filters.gnomad_af)
             if gnomad_af > self.filters.max_gnomad_af:
                 if self.immediate_return:
                     return record, [FilterClass.TOO_HIGH_GNOMAD_AF]

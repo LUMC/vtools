@@ -22,9 +22,9 @@
 
 import math
 
-from vtools.gcoverage import CovStats, RefRecord, fractions_at_least, qualmean
-
 import numpy as np
+
+from vtools.gcoverage import CovStats, qualmean
 
 
 def test_qualmean():
@@ -46,7 +46,7 @@ def test_covstats_from_coverages_and_gq_qualities():
         94, 95, 95, 95, 96, 96, 97, 97])
     qualities = np.array([5, 15, 25, 35, 45, 75, 95])
     covstats = CovStats.from_coverages_and_gq_qualities(coverages, qualities)
-    assert  math.isclose(covstats.mean_gq, 12.9934485294235)
+    assert math.isclose(covstats.mean_gq, 12.9934485294235)
     assert covstats.median_gq == 35
     assert covstats.mean_dp == sum(coverages) / len(coverages)
     assert covstats.median_dp == 54

@@ -6,10 +6,10 @@ vtools.evaluate
 :copyright: (c) 2018 Leiden University Medical Center
 :license: MIT
 """
-from typing import List, Dict
 from types import SimpleNamespace
+from typing import Dict, List, Tuple
 
-from cyvcf2 import VCF
+from cyvcf2 import VCF, Variant  # type: ignore
 
 
 def parse_variants(ref: str, call: List[str], pos: List[str],
@@ -62,7 +62,8 @@ def site_concordancy(call_vcf: VCF,
                      call_samples: List[str],
                      positive_samples: List[str],
                      min_gq: float = 30,
-                     min_dp: float = 0) -> Dict[str, float]:
+                     min_dp: float = 0
+                     ) -> Tuple[Dict[str, int], List[Variant]]:
     """
     Calculate concordance between sites of two call sets,
     of which one contains known true positives.
@@ -87,9 +88,10 @@ def site_concordancy(call_vcf: VCF,
 
     :raises: ValueError if sample lists are not of same size.
 
-    :returns: Dictionary of shape {"hom_alt_concordant": 0,
+    :returns: Tuple of Dictionary of shape {"hom_alt_concordant": 0,
                                    "het_concordant": 0, "sites_considered": 0,
                                    "total_sites": 0}
+                   and a list of discordant records
     """
     if len(positive_samples) != len(call_samples):
         raise ValueError("Lists of samples must have same size")
