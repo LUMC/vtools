@@ -188,6 +188,33 @@ def gvcf_records_to_coverage_and_quality_arrays(
             np.fromiter(gen_quals, dtype=np.int64, count=len(gen_quals)))
 
 
+def region_and_vcf_to_coverage_and_quality_lists(region: Region,
+                                                 vcf: cyvcf2.VCF):
+    """
+    Gets the coverages and qualities for a particular region in a VCF.
+
+    """
+    depths: List[int] = []
+    gen_quals: List[int] = []
+    for variant in vcf(str(region)):
+        # max and min to make sure the positions outside of the region are
+        # not considered.
+        # It is more computationally efficient to only do this on the first and
+        # last record. But this is way more readable. It is also immediately
+        # correct for the edge case with only one record.
+        start = max(region.start - 1, variant.start)
+        end = min(region.end, variant.end)
+        size = end - start
+        gq = variant.gt_quals[0]
+        try:
+            dp = variant.format("DP")[0][0]
+        except TypeError:
+            dp = 0
+        depths.extend([dp] * size)
+        gen_quals.extend([gq] * size)
+    return depths, gen_quals
+
+
 def refflat_and_gvcfs_to_tsv(refflat_file: str,
                              gvcfs: Iterable[str],
                              per_exon=False

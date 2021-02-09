@@ -23,14 +23,15 @@
 import math
 from pathlib import Path
 
+from cyvcf2 import VCF  # type: ignore
+
 import numpy as np
 
 import pytest
 
-from cyvcf2 import VCF  # type: ignore
-
 from vtools.gcoverage import CovStats, RefRecord,  Region, \
-    file_to_refflat_records, feature_to_vcf_records, qualmean
+    feature_to_vcf_records, file_to_refflat_records, qualmean, \
+    region_and_vcf_to_coverage_and_quality_lists
 
 
 def test_qualmean():
@@ -132,12 +133,23 @@ def test_file_ro_refflat_records():
         "NM_001271886", "NM_024666", "NM_020745", "NM_001605", "NM_005763"]
 
 
+def test_region_and_vcf_to_coverage_and_quality_lists():
+    test_vcf_path = Path(__file__).parent / "gcoverage_data" / "test.g.vcf.gz"
+    test_vcf = VCF(str(test_vcf_path))
+    coverages, qualities = region_and_vcf_to_coverage_and_quality_lists(
+        Region("chr1", 20, 30), test_vcf)
+    assert len(coverages) == len(qualities)
+    assert len(coverages) == 11
+    assert coverages == [7, 8, 9, 9, 9, 10, 10, 10, 10, 10, 10]
+    assert qualities == [21, 24, 27, 27, 27, 30, 30, 30, 30, 30, 30]
+
+
 def test_feature_to_vcf_records():
     test_vcf_path = Path(__file__).parent / "gcoverage_data" / "test.g.vcf.gz"
     test_vcf = VCF(str(test_vcf_path))
     records = list(feature_to_vcf_records([Region("chr1", 1, 10),
                                            Region("chr1", 21, 30)],
-                           [test_vcf]))
+                                          [test_vcf]))
     assert len(records) == 10
     positions = [(record.CHROM, record.start, record.end)
                  for record in records]
