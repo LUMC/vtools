@@ -32,18 +32,6 @@ def qualmean(quals: np.ndarray) -> float:
     return -10*np.log10(np.mean(np.power(10, quals/-10)))
 
 
-def fractions_at_least(values: np.ndarray,
-                       values_at_least: Iterable[Union[int, float]]
-                       ) -> List[float]:
-    """Counts which fraction of the values is higher than the value in
-    values at least."""
-    total = values.size
-    # numpy.greater_equal returns a list of Booleans. But since true==1
-    # these can be summed for the total count.
-    return([np.greater_equal(values, at_least).sum() / total
-            for at_least in values_at_least])
-
-
 class CovStats(NamedTuple):
     """Class representing a line in a CovStats TSV."""
     mean_dp: float
@@ -67,12 +55,18 @@ class CovStats(NamedTuple):
                                         gq_qualities: np.ndarray):
         """Generate a CovStats object from an array of coverages and genome
         qualities."""
-        perc_at_least_dp = [fraction * 100 for fraction in
-                            fractions_at_least(coverages,
-                                               (10, 20, 30, 50, 100))]
-        perc_at_least_gq = [fraction * 100 for fraction in
-                            fractions_at_least(gq_qualities,
-                                               (10, 20, 30, 50, 90))]
+        total_coverages = coverages.size
+        total_qualities = gq_qualities.size
+        # numpy.greater_equal returns a list of Booleans. But since true==1
+        # these can be summed for the total count.
+        perc_at_least_dp = [
+            np.greater_equal(coverages, at_least).sum() / total_coverages
+            * 100 for at_least in (10, 20, 30, 50, 100)]
+        perc_at_least_gq = [
+            np.greater_equal(gq_qualities, at_least).sum() / total_qualities
+            * 100 for at_least in (10, 20, 30, 50, 90)]
+
+        # Explicit float conversion needed as numpy does not guarantee a float.
         return cls(float(np.mean(coverages)),
                    qualmean(gq_qualities),
                    float(np.median(coverages)),
