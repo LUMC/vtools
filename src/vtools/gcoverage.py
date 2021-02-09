@@ -6,6 +6,7 @@ vtools.gcoverage
 :copyright: (c) 2018 Leiden University Medical Center
 :license: MIT
 """
+import os
 from typing import Generator, Iterable, List, NamedTuple, Tuple, Union
 
 import cyvcf2  # type: ignore
@@ -141,7 +142,8 @@ class RefRecord(NamedTuple):
         return regs
 
 
-def file_to_refflat_records(filename: str) -> Generator[RefRecord, None, None]:
+def file_to_refflat_records(filename: Union[str, os.PathLike]
+                            ) -> Generator[RefRecord, None, None]:
     with open(filename, "rt") as file_h:
         for line in file_h:
             yield RefRecord.from_line(line)

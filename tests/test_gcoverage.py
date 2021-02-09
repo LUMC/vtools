@@ -27,9 +27,8 @@ import numpy as np
 
 import pytest
 
-from vtools.gcoverage import CovStats, RefRecord,  Region, qualmean
-
-TEST_REFFLAT = Path(__file__).parent / "gcoverage_data" / "10genes.refflat"
+from vtools.gcoverage import CovStats, RefRecord,  Region, \
+    file_to_refflat_records, qualmean
 
 
 def test_qualmean():
@@ -120,3 +119,12 @@ def test_refrecord_too_little_columns():
 
 def test_region_string():
     assert str(Region("chr1", 1, 100)) == "chr1:1-100"
+
+
+def test_file_ro_refflat_records():
+    test_refflat = Path(__file__).parent / "gcoverage_data" / "10genes.refflat"
+    record_list = list(file_to_refflat_records(test_refflat))
+    transcripts = [record.transcript for record in record_list]
+    assert transcripts == [
+        "NR_026971", "NM_000014", "NM_001173466", "NM_015665", "NM_001271885",
+        "NM_001271886", "NM_024666", "NM_020745", "NM_001605", "NM_005763"]
