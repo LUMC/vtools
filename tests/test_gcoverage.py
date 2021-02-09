@@ -30,8 +30,8 @@ import numpy as np
 import pytest
 
 from vtools.gcoverage import CovStats, RefRecord,  Region, \
-    feature_to_vcf_records, file_to_refflat_records, qualmean, \
-    region_and_vcf_to_coverage_and_quality_lists
+    feature_to_coverage_and_quality_arrays, file_to_refflat_records, \
+    qualmean, region_and_vcf_to_coverage_and_quality_lists
 
 
 def test_qualmean():
@@ -144,13 +144,14 @@ def test_region_and_vcf_to_coverage_and_quality_lists():
     assert qualities == [21, 24, 27, 27, 27, 30, 30, 30, 30, 30, 30]
 
 
-def test_feature_to_vcf_records():
+def test_feature_to_coverage_and_quality_arrays():
     test_vcf_path = Path(__file__).parent / "gcoverage_data" / "test.g.vcf.gz"
     test_vcf = VCF(str(test_vcf_path))
-    records = list(feature_to_vcf_records([Region("chr1", 1, 10),
-                                           Region("chr1", 21, 30)],
-                                          [test_vcf]))
-    assert len(records) == 10
-    positions = [(record.CHROM, record.start, record.end)
-                 for record in records]
-    assert positions[0] == ("chr1", 0, 1)
+    coverages, qualities = feature_to_coverage_and_quality_arrays(
+        [Region("chr1", 1, 10), Region("chr1", 21, 30)], [test_vcf])
+    assert len(coverages) == len(qualities)
+    assert len(coverages) == 20
+    assert list(coverages) == [2, 3, 4, 4, 4, 5, 5, 6, 6, 6, 8, 9, 9, 9, 10,
+                               10, 10, 10, 10, 10]
+    assert list(qualities) == [6, 9, 12, 12, 12, 15, 15, 18, 0, 18, 24, 27, 27,
+                               27, 30, 30, 30, 30, 30, 30]

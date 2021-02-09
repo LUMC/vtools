@@ -149,37 +149,17 @@ def file_to_refflat_records(filename: Union[str, os.PathLike]
             yield RefRecord.from_line(line)
 
 
-def feature_to_vcf_records(feature: List[Region], sample_vcfs: List[cyvcf2.VCF]
-                           ) -> Generator[cyvcf2.Variant, None, None]:
-    for sample_vcf in sample_vcfs:
-        for region in feature:
-            for record in sample_vcf(str(region)):
-                yield record
-
-
-def gvcf_records_to_coverage_and_quality_arrays(
-        gvcf_records: Iterable[cyvcf2.Variant],
-        maxlen: int = 15000
-        ) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Get coverage and genome quality for all gvcf records per base
-
-    Some records may be huge, especially those around centromeres.
-    Therefore, there is a maxlen argument. Maximally `maxlen` values
-    are used per variant.
-    """
+def feature_to_coverage_and_quality_arrays(feature: List[Region],
+                                           vcfs: List[cyvcf2.VCF]
+                                           ) -> Tuple[np.ndarray, np.ndarray]:
     depths: List[int] = []
     gen_quals: List[int] = []
-    for record in gvcf_records:
-        size = record.end - record.start
-        try:
-            dp = record.format("DP")[0][0]
-        except TypeError:
-            dp = 0
-        gq = record.gt_quals[0]
-        record_size = min(size, maxlen)  # Limit size to maxlen
-        depths.extend([dp] * record_size)
-        gen_quals.extend([gq] * record_size)
+    for vcf in vcfs:
+        for region in feature:
+            covs, quals = region_and_vcf_to_coverage_and_quality_lists(
+                region, vcf)
+            depths.extend(covs)
+            gen_quals.extend(quals)
     # np.fromiter is faster than np.array in this case. Also specifying the
     # length allows allocating the array at once in memory, which is faster.
     # Use int64 which is compatible with python integer. Using smaller
@@ -227,9 +207,9 @@ def refflat_and_gvcfs_to_tsv(refflat_file: str,
             gene = refflat_record.gene
             transcript = refflat_record.transcript
             for i, region in enumerate(refflat_record.exons):
-                records = feature_to_vcf_records([region], gvcf_readers)
                 coverage, gq_quals = (
-                    gvcf_records_to_coverage_and_quality_arrays(records))
+                    feature_to_coverage_and_quality_arrays(
+                        [region], gvcf_readers))
                 covstats = CovStats.from_coverages_and_gq_qualities(
                     coverage, gq_quals)
                 exon = i + 1 if refflat_record.forward else total_exons - i
@@ -237,10 +217,9 @@ def refflat_and_gvcfs_to_tsv(refflat_file: str,
     else:
         yield "gene\ttranscript\t" + CovStats.header()
         for refflat_record in file_to_refflat_records(refflat_file):
-            records = feature_to_vcf_records(
-                refflat_record.cds_exons, gvcf_readers)
             coverage, gq_quals = (
-                gvcf_records_to_coverage_and_quality_arrays(records))
+                feature_to_coverage_and_quality_arrays(
+                    refflat_record.cds_exons, gvcf_readers))
             covstats = CovStats.from_coverages_and_gq_qualities(
                     coverage, gq_quals)
             yield (f"{refflat_record.gene}\t{refflat_record.transcript}\t"
