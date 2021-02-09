@@ -41,6 +41,9 @@ class Region(NamedTuple):
     def __str__(self):
         return "{0}:{1}-{2}".format(self.chr, self.start, self.end)
 
+    def __len__(self):
+        return self.end - self.start + 1  # +1 since the position is one-based.
+
 
 def qualmean(quals: np.ndarray) -> float:
     """

@@ -124,6 +124,10 @@ def test_region_string():
     assert str(Region("chr1", 1, 100)) == "chr1:1-100"
 
 
+def test_region_length():
+    assert len(Region("chr1", 1, 100)) == 100
+
+
 def test_file_ro_refflat_records():
     test_refflat = Path(__file__).parent / "gcoverage_data" / "10genes.refflat"
     record_list = list(file_to_refflat_records(test_refflat))
@@ -136,10 +140,11 @@ def test_file_ro_refflat_records():
 def test_region_and_vcf_to_coverage_and_quality_lists():
     test_vcf_path = Path(__file__).parent / "gcoverage_data" / "test.g.vcf.gz"
     test_vcf = VCF(str(test_vcf_path))
+    region = Region("chr1", 20, 30)
     coverages, qualities = region_and_vcf_to_coverage_and_quality_lists(
-        Region("chr1", 20, 30), test_vcf)
+        region, test_vcf)
+    assert len(coverages) == len(region)
     assert len(coverages) == len(qualities)
-    assert len(coverages) == 11
     assert coverages == [7, 8, 9, 9, 9, 10, 10, 10, 10, 10, 10]
     assert qualities == [21, 24, 27, 27, 27, 30, 30, 30, 30, 30, 30]
 
@@ -147,10 +152,11 @@ def test_region_and_vcf_to_coverage_and_quality_lists():
 def test_feature_to_coverage_and_quality_arrays():
     test_vcf_path = Path(__file__).parent / "gcoverage_data" / "test.g.vcf.gz"
     test_vcf = VCF(str(test_vcf_path))
+    regions = [Region("chr1", 1, 10), Region("chr1", 21, 30)]
     coverages, qualities = feature_to_coverage_and_quality_arrays(
-        [Region("chr1", 1, 10), Region("chr1", 21, 30)], [test_vcf])
+        regions, [test_vcf])
     assert len(coverages) == len(qualities)
-    assert len(coverages) == 20
+    assert len(coverages) == sum(len(region) for region in regions)
     assert list(coverages) == [2, 3, 4, 4, 4, 5, 5, 6, 6, 6, 8, 9, 9, 9, 10,
                                10, 10, 10, 10, 10]
     assert list(qualities) == [6, 9, 12, 12, 12, 15, 15, 18, 0, 18, 24, 27, 27,
