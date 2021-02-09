@@ -27,8 +27,10 @@ import numpy as np
 
 import pytest
 
+from cyvcf2 import VCF  # type: ignore
+
 from vtools.gcoverage import CovStats, RefRecord,  Region, \
-    file_to_refflat_records, qualmean
+    file_to_refflat_records, feature_to_vcf_records, qualmean
 
 
 def test_qualmean():
@@ -128,3 +130,15 @@ def test_file_ro_refflat_records():
     assert transcripts == [
         "NR_026971", "NM_000014", "NM_001173466", "NM_015665", "NM_001271885",
         "NM_001271886", "NM_024666", "NM_020745", "NM_001605", "NM_005763"]
+
+
+def test_feature_to_vcf_records():
+    test_vcf_path = Path(__file__).parent / "gcoverage_data" / "test.g.vcf.gz"
+    test_vcf = VCF(str(test_vcf_path))
+    records = list(feature_to_vcf_records([Region("chr1", 1, 10),
+                                           Region("chr1", 21, 30)],
+                           [test_vcf]))
+    assert len(records) == 10
+    positions = [(record.CHROM, record.start, record.end)
+                 for record in records]
+    assert positions[0] == ("chr1", 0, 1)
