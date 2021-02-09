@@ -6,56 +6,22 @@ vtools.gcoverage
 :copyright: (c) 2018 Leiden University Medical Center
 :license: MIT
 """
+import itertools
+from typing import Generator, Iterable, List, NamedTuple, Tuple, Union
 
 import cyvcf2
+
 import numpy as np
 
-from collections import namedtuple
-from itertools import chain
 
-from typing import List, Optional, Tuple, NamedTuple
+class Region(NamedTuple):
+    """Represents a VCF region"""
+    chr: str
+    start: int
+    end: int
 
-from .optimized import amount_atleast
-
-
-Region = namedtuple("Region", ["chr", "start", "end"])
-
-
-def coverage_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000) -> List[int]:
-    """
-    Get coverage for gvcf record per base
-
-    Some records may be huge, especially those around centromeres.
-    Therefore, there is a maxlen argument. Maximally `maxlen` values
-    are returned.
-    """
-    start = record.start
-    end = record.end
-    size = end - start
-    try:
-        dp = record.format("DP")[0][0]
-    except TypeError:
-        dp = 0
-    if size < maxlen:
-        return [dp]*(end-start)
-    else:
-        return [dp]*maxlen
-
-
-def gq_for_gvcf_record(record: cyvcf2.Variant, maxlen: int = 15000) -> List[int]:
-    """
-    Some records may be huge, especially those around centromeres.
-    Therefore, there is a maxlen argument. Maximally `maxlen` values
-    are returned.
-    """
-    start = record.start
-    end = record.end
-    size = end - start
-    gq = record.gt_quals[0]
-    if size < maxlen:
-        return [gq]*(end-start)
-    else:
-        return [gq]*maxlen
+    def __str__(self):
+        return "{0}:{1}-{2}".format(self.chr, self.start, self.end)
 
 
 def qualmean(quals: np.ndarray) -> float:
@@ -67,78 +33,61 @@ def qualmean(quals: np.ndarray) -> float:
     return -10*np.log10(np.mean(np.power(10, quals/-10)))
 
 
-class CovStats(object):
-    def __init__(self, records):
-        self.records = records
-        self.__coverages = None
-        self.__gq_qualities = None
+def fractions_at_least(values: np.ndarray,
+                       values_at_least: Iterable[Union[int, float]]
+                       ) -> List[float]:
+    """Counts which fraction of the values is higher than the value in
+    values at least."""
+    total = values.size
+    # numpy.greater_equal returns a list of Booleans. But since true==1
+    # these can be summed for the total count.
+    return([np.greater_equal(values, at_least).sum() / total
+            for at_least in values_at_least])
 
-    @property
-    def coverages(self) -> np.ndarray:
-        if self.__coverages is None:
-            self.__coverages = np.fromiter(
-                chain.from_iterable(
-                    (coverage_for_gvcf_record(x) for x in self.records)
-                ),
-                dtype=int
-            )
-        return self.__coverages
 
-    @property
-    def gq_qualities(self) -> np.ndarray:
-        if self.__gq_qualities is None:
-            self.__gq_qualities = np.fromiter(
-                chain.from_iterable(
-                    (gq_for_gvcf_record(x) for x in self.records)
-                ),
-                dtype=int
-            )
-        return self.__gq_qualities
+class CovStats(NamedTuple):
+    """Class representing a line in a CovStats TSV."""
+    mean_dp: float
+    mean_gq: float
+    median_dp: float
+    median_gq: float
+    perc_at_least_10_dp: float
+    perc_at_least_20_dp: float
+    perc_at_least_30_dp: float
+    perc_at_least_50_dp: float
+    perc_at_least_100_dp: float
+    perc_at_least_10_gq: float
+    perc_at_least_20_gq: float
+    perc_at_least_30_gq: float
+    perc_at_least_50_gq: float
+    perc_at_least_90_gq: float
 
-    @property
-    def median_cov(self) -> float:
-        return np.median(self.coverages)
+    @classmethod
+    def from_coverages_and_gq_qualities(cls,
+                                        coverages: np.ndarray,
+                                        gq_qualities: np.ndarray):
+        """Generate a CovStats object from an array of coverages and genome
+        qualities."""
+        perc_at_least_dp = [fraction * 100 for fraction in
+                            fractions_at_least(coverages,
+                                               (10, 20, 30, 50, 100))]
+        perc_at_least_gq = [fraction * 100 for fraction in
+                            fractions_at_least(gq_qualities,
+                                               (10, 20, 30, 50, 90))]
+        return cls(np.mean(coverages),
+                   qualmean(gq_qualities),
+                   np.median(coverages),
+                   np.median(gq_qualities),
+                   *perc_at_least_dp,
+                   *perc_at_least_gq)
 
-    @property
-    def mean_cov(self) -> float:
-        return np.mean(self.coverages)
+    @classmethod
+    def header(cls):
+        return "\t".join(cls.__annotations__.keys())
 
-    @property
-    def median_gq(self) -> float:
-        return np.median(self.gq_qualities)
-
-    @property
-    def mean_gq(self) -> float:
-        return qualmean(self.gq_qualities)
-
-    def percent_atleast_dp(self, atleast) -> Optional[float]:
-        if len(self.coverages) == 0:
-            return None
-        k = amount_atleast(self.coverages, atleast)
-        return (k/len(self.coverages))*100
-
-    def percent_atleast_gq(self, atleast) -> Optional[float]:
-        if len(self.gq_qualities) == 0:
-            return None
-        k = amount_atleast(self.gq_qualities, atleast)
-        return (k/len(self.gq_qualities))*100
-
-    @property
-    def stats(self) -> dict:
-        s = {
-            "median_dp": self.median_cov,
-            "mean_dp": self.mean_cov,
-            "median_gq": self.median_gq,
-            "mean_gq": self.mean_gq
-        }
-        for perc in (10, 20, 30, 50, 100):
-            key = "perc_at_least_{0}_dp".format(perc)
-            s[key] = self.percent_atleast_dp(perc)
-
-        for perc in (10, 20, 30, 50, 90):
-            key = "perc_at_least_{0}_gq".format(perc)
-            s[key] = self.percent_atleast_gq(perc)
-        return s
+    def __str__(self):
+        # 2 decimals is enough precision.
+        return "\t".join("{:.2f}".format(value) for value in self)
 
 
 class RefRecord(NamedTuple):
@@ -196,14 +145,76 @@ class RefRecord(NamedTuple):
         return regs
 
 
-def region_coverages(reader: cyvcf2.VCF, regions: List[Region]) -> Optional[dict]:
-    records = []
-    for region in regions:
-        reg_str = "{0}:{1}-{2}".format(region.chr, region.start, region.end)
-        it = reader(reg_str)
-        records += list(it)
+def file_to_refflat_records(filename: str) -> Generator[RefRecord, None, None]:
+    with open(filename, "rt") as file_h:
+        for line in file_h:
+            yield RefRecord.from_line(line)
 
-    if len(records) == 0:
-        return CovStats([]).stats
 
-    return CovStats(records).stats
+def feature_to_vcf_records(feature: List[Region], sample_vcfs: List[cyvcf2.VCF]
+                           ) -> Generator[cyvcf2.Variant, None, None]:
+    for sample_vcf in sample_vcfs:
+        for region in feature:
+            for record in sample_vcf(str(region)):
+                yield record
+
+
+def gvcf_records_to_coverage_and_quality_arrays(
+        gvcf_records: Iterable[cyvcf2.Variant],
+        maxlen: int = 15000
+        ) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Get coverage and genome quality for all gvcf records per base
+
+    Some records may be huge, especially those around centromeres.
+    Therefore, there is a maxlen argument. Maximally `maxlen` values
+    are used per variant.
+    """
+    depths: List[int] = []
+    gen_quals: List[int] = []
+    for record in gvcf_records:
+        size = record.end - record.start
+        try:
+            dp = record.format("DP")[0][0]
+        except TypeError:
+            dp = 0
+        gq = record.gt_quals[0]
+        record_size = min(size, maxlen)  # Limit size to maxlen
+        depths.extend([dp] * record_size)
+        gen_quals.extend([gq] * record_size)
+    # np.fromiter is faster than np.array in this case. Also specifying the
+    # length allows allocating the array at once in memory, which is faster.
+    return (np.fromiter(depths, dtype=np.int, count=len(depths)),
+            np.fromiter(gen_quals, dtype=np.int, count=len(gen_quals)))
+
+
+def refflat_and_gvcfs_to_tsv(refflat_file: str,
+                             gvcfs: Iterable[str],
+                             per_exon=False
+                             ) -> Generator[str, None, None]:
+    gvcf_readers = [cyvcf2.VCF(gvcf) for gvcf in gvcfs]
+    if per_exon:
+        yield "gene\ttranscript\texon\t" + CovStats.header()
+        for refflat_record in file_to_refflat_records(refflat_file):
+            total_exons = len(refflat_record.exons)
+            gene = refflat_record.gene
+            transcript = refflat_record.transcript
+            for i, region in enumerate(refflat_record.exons):
+                records = feature_to_vcf_records([region], gvcf_readers)
+                coverage, gq_quals = (
+                    gvcf_records_to_coverage_and_quality_arrays(records))
+                covstats = CovStats.from_coverages_and_gq_qualities(
+                    coverage, gq_quals)
+                exon = i + 1 if refflat_record.forward else total_exons - i
+                yield f"{gene}\t{transcript}\t{exon}\t{str(covstats)}"
+    else:
+        yield "gene\ttranscript\t" + CovStats.header()
+        for refflat_record in file_to_refflat_records(refflat_file):
+            regions = [x[1] for x in refflat_record.cds_exons]
+            records = feature_to_vcf_records(regions, gvcf_readers)
+            coverage, gq_quals = (
+                gvcf_records_to_coverage_and_quality_arrays(records))
+            covstats = CovStats.from_coverages_and_gq_qualities(
+                    coverage, gq_quals)
+            yield (f"{refflat_record.gene}\t{refflat_record.transcript}\t"
+                   f"{str(covstats)}")

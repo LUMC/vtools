@@ -15,8 +15,7 @@ import gzip
 from .evaluate import site_concordancy
 from .filter import FilterParams, FilterClass, Filterer
 from .stats import Stats
-from .gcoverage import RefRecord, region_coverages
-
+from .gcoverage import refflat_and_gvcfs_to_tsv
 
 @click.command()
 @click.option("-c", "--call-vcf", type=click.Path(exists=True),
@@ -128,10 +127,10 @@ def stats_cli(input):
 
 
 @click.command()
-@click.option("-I", "--input-gvcf",
-              type=click.Path(exists=True, readable=True),
-              required=True,
-              help="Path to input VCF file")
+@click.argument("input-gvcf",
+                nargs=-1,
+                type=click.Path(exists=True, readable=True),
+                required=True)
 @click.option("-R", "--refflat-file",
               type=click.Path(exists=True, readable=True),
               required=True,
@@ -140,32 +139,5 @@ def stats_cli(input):
               default=True,
               help="Collect metrics per exon or per transcript")
 def gcoverage_cli(input_gvcf, refflat_file, per_exon):
-    reader = VCF(input_gvcf)
-    header = None
-    with open(refflat_file) as handle:
-        for line in handle:
-            r = RefRecord.from_line(line)
-            if not per_exon:
-                regions = [x[1] for x in r.cds_exons]
-                cov = region_coverages(reader, regions)
-                cov['transcript'] = r.transcript
-                cov['gene'] = r.gene
-                if header is None:
-                    header = "\t".join(sorted(cov.keys()))
-                    print(header)
-                vals = [str(cov[k]) for k in sorted(cov.keys())]
-                print("\t".join(vals))
-            else:
-                for i, reg in enumerate(r.exons):
-                    cov = region_coverages(reader, [reg])
-                    cov['transcript'] = r.transcript
-                    cov['gene'] = r.gene
-                    if r.forward:
-                        cov['exon'] = i+1
-                    else:
-                        cov['exon'] = len(r.exons) - i
-                    if header is None:
-                        header = "\t".join(sorted(cov.keys()))
-                        print(header)
-                    vals = [str(cov[k]) for k in sorted(cov.keys())]
-                    print("\t".join(vals))
+    for line in refflat_and_gvcfs_to_tsv(refflat_file, input_gvcf, per_exon):
+        print(line)
