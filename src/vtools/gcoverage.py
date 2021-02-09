@@ -104,15 +104,20 @@ class RefRecord(NamedTuple):
     @classmethod
     def from_line(cls, line):
         contents = line.strip().split("\t")
-        if len(contents) < 11:
-            raise ValueError("refFlat line must have at least 11 fields")
+        if len(contents) != 11:
+            raise ValueError(f"refFlat line must have exactly 11 fields. "
+                             f"Error on line: {line}.")
         gene = contents[0]
         transcript = contents[1]
         contig = contents[2]
-        if "-" in contents[3].strip():
+        strand = contents[3].strip()
+        if strand == "+":
+            forward = True
+        elif strand == "-":
             forward = False
         else:
-            forward = True
+            raise ValueError(f"Invalid strand: '{strand}'. Strand should be "
+                             f"'+' or '-'. Error on line: {line}. ")
         start = int(contents[4])
         end = int(contents[5])
         cds_start = int(contents[6])

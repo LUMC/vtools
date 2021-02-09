@@ -25,6 +25,8 @@ from pathlib import Path
 
 import numpy as np
 
+import pytest
+
 from vtools.gcoverage import CovStats, RefRecord,  Region, qualmean
 
 TEST_REFFLAT = Path(__file__).parent / "gcoverage_data" / "10genes.refflat"
@@ -93,3 +95,28 @@ def test_refrecord():
         Region("contig", 400, 500),
         Region("contig", 550, 600)
     ]
+
+
+def test_refrecord_forward():
+    record_line = ("GENE\tTRANSCRIPT\tcontig\t+\t100\t1000\t300\t600\t5\t"
+                   "100,250,400,550,800,\t200,350,500,650,900,")
+    refflat_record = RefRecord.from_line(record_line)
+    assert refflat_record.forward is True
+
+
+def test_refrecord_too_many_columns():
+    record_line = ("GENE\tTRANSCRIPT\tcontig\t+\t100\t1000\t300\t600\t5\t"
+                   "100,250,400,550,800,\t200,350,500,650,900,\tnonsense")
+    with pytest.raises(ValueError):
+        RefRecord.from_line(record_line)
+
+
+def test_refrecord_too_little_columns():
+    record_line = ("GENE\t+\t100\t1000\t300\t600\t5\t"
+                   "100,250,400,550,800,\t200,350,500,650,900,\tnonsense")
+    with pytest.raises(ValueError):
+        RefRecord.from_line(record_line)
+
+
+def test_region_string():
+    assert str(Region("chr1", 1, 100)) == "chr1:1-100"
