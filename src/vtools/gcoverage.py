@@ -124,15 +124,13 @@ class RefRecord(NamedTuple):
 
     @property
     def exons(self) -> List[Region]:
-        regs = []
-        for s, e in zip(self.exon_starts, self.exon_ends):
-            regs.append(Region(self.contig, s, e))
-        return regs
+        return [Region(self.contig, s, e)
+                for s, e in zip(self.exon_starts, self.exon_ends)]
 
     @property
-    def cds_exons(self) -> List[Tuple[int, Region]]:
+    def cds_exons(self) -> List[Region]:
         regs = []
-        for i, (s, e) in enumerate(zip(self.exon_starts, self.exon_ends)):
+        for s, e in zip(self.exon_starts, self.exon_ends):
             if s < self.cds_start:
                 s = self.cds_start
             if e > self.cds_end:
@@ -140,7 +138,7 @@ class RefRecord(NamedTuple):
             reg = Region(self.contig, s, e)
             if reg.end <= reg.start:   # utr exons
                 continue
-            regs.append((i, reg))
+            regs.append(reg)
         return regs
 
 
@@ -211,8 +209,8 @@ def refflat_and_gvcfs_to_tsv(refflat_file: str,
     else:
         yield "gene\ttranscript\t" + CovStats.header()
         for refflat_record in file_to_refflat_records(refflat_file):
-            regions = [x[1] for x in refflat_record.cds_exons]
-            records = feature_to_vcf_records(regions, gvcf_readers)
+            records = feature_to_vcf_records(
+                refflat_record.cds_exons, gvcf_readers)
             coverage, gq_quals = (
                 gvcf_records_to_coverage_and_quality_arrays(records))
             covstats = CovStats.from_coverages_and_gq_qualities(

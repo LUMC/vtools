@@ -25,9 +25,10 @@ from pathlib import Path
 
 import numpy as np
 
-from vtools.gcoverage import CovStats, RefRecord, qualmean, Region
+from vtools.gcoverage import CovStats, RefRecord,  Region, qualmean
 
 TEST_REFFLAT = Path(__file__).parent / "gcoverage_data" / "10genes.refflat"
+
 
 def test_qualmean():
     qualities = np.array([5, 15, 25, 35, 45, 75, 95])
