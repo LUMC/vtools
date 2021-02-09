@@ -21,11 +21,13 @@
 # SOFTWARE.
 
 import math
+from pathlib import Path
 
 import numpy as np
 
-from vtools.gcoverage import CovStats, qualmean
+from vtools.gcoverage import CovStats, RefRecord, qualmean, Region
 
+TEST_REFFLAT = Path(__file__).parent / "gcoverage_data" / "10genes.refflat"
 
 def test_qualmean():
     qualities = np.array([5, 15, 25, 35, 45, 75, 95])
@@ -60,3 +62,33 @@ def test_covstats_from_coverages_and_gq_qualities():
     assert covstats.perc_at_least_30_gq == 4 / 7 * 100
     assert covstats.perc_at_least_50_gq == 2 / 7 * 100
     assert covstats.perc_at_least_90_gq == 1 / 7 * 100
+
+
+def test_refrecord():
+    record_line = ("GENE\tTRANSCRIPT\tcontig\t-\t100\t1000\t300\t600\t5\t"
+                   "100,250,400,550,800,\t200,350,500,650,900,")
+    refflat_record = RefRecord.from_line(record_line)
+    assert refflat_record.gene == "GENE"
+    assert refflat_record.transcript == "TRANSCRIPT"
+    assert refflat_record.contig == "contig"
+    assert refflat_record.forward is False
+    assert refflat_record.start == 100
+    assert refflat_record.end == 1000
+    assert refflat_record.cds_start == 300
+    assert refflat_record.cds_end == 600
+    assert refflat_record.exon_starts == [100, 250, 400, 550, 800]
+    assert refflat_record.exon_ends == [200, 350, 500, 650, 900]
+    assert refflat_record.exons == [
+        Region("contig", 100, 200),
+        Region("contig", 250, 350),
+        Region("contig", 400, 500),
+        Region("contig", 550, 650),
+        Region("contig", 800, 900)
+    ]
+    # Only (partial) exons inside the cds_start - cds_end boundary should end
+    # up here.
+    assert refflat_record.cds_exons == [
+        Region("contig", 300, 350),
+        Region("contig", 400, 500),
+        Region("contig", 550, 600)
+    ]
