@@ -31,7 +31,8 @@ import pytest
 
 from vtools.gcoverage import CovStats, RefRecord,  Region, \
     feature_to_coverage_and_quality_lists, file_to_refflat_records, \
-    qualmean, region_and_vcf_to_coverage_and_quality_lists
+    qualmean, refflat_and_gvcfs_to_tsv, \
+    region_and_vcf_to_coverage_and_quality_lists
 
 
 def test_qualmean():
@@ -163,3 +164,29 @@ def test_feature_to_coverage_and_quality_arrays():
     assert qualities == [6.0, 9.0, 12.0, 12.0, 12.0, 15.0, 15.0, 18.0, 0.0,
                          18.0, 24.0, 27.0, 27.0, 27.0, 30.0, 30.0, 30.0, 30.0,
                          30.0, 30.0]
+
+
+def test_refflat_and_gvcfs_to_tsv_per_exon_compact():
+    data_dir = Path(__file__).parent / "gcoverage_data"
+    gvcfs = [str(data_dir / "test.g.vcf.gz")]
+    refflat = data_dir / "test.refflat"
+    lines = refflat_and_gvcfs_to_tsv(refflat, gvcfs,
+                                     per_exon=True, compact_header=True)
+    result = list(lines)
+    assert result[0] == ("gene\ttranscript\texon\t" + CovStats.header(True))
+    assert result[1] == ("GENE1\tTR0001\t1\t6.00\t18.00\t6.00\t18.00\t"
+                         "0.00\t0.00\t0.00\t0.00\t0.00\t"
+                         "100.00\t0.00\t0.00\t0.00\t0.00")
+
+
+def test_refflat_and_gvcfs_to_tsv_per_transcript_verbose():
+    data_dir = Path(__file__).parent / "gcoverage_data"
+    gvcfs = [str(data_dir / "test.g.vcf.gz")]
+    refflat = data_dir / "test.refflat"
+    lines = refflat_and_gvcfs_to_tsv(refflat, gvcfs,
+                                     per_exon=False, compact_header=False)
+    result = list(lines)
+    assert result[0] == ("gene\ttranscript\t" + CovStats.header(False))
+    assert result[3] == ("GENE3\tTR0006\t32.40\t49.23\t32.00\t79.00\t"
+                         "100.00\t100.00\t100.00\t0.00\t0.00\t"
+                         "100.00\t100.00\t100.00\t80.00\t20.00")

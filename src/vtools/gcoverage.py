@@ -257,9 +257,12 @@ def refflat_and_gvcfs_to_tsv(refflat_file: str,
     else:
         yield "gene\ttranscript\t" + CovStats.header(compact_header)
         for refflat_record in file_to_refflat_records(refflat_file):
+            region = Region(refflat_record.contig,
+                            refflat_record.start,
+                            refflat_record.end)
             coverage, gq_quals = (
                 feature_to_coverage_and_quality_lists(
-                    refflat_record.cds_exons, gvcf_readers))
+                    [region], gvcf_readers))
             covstats = CovStats.from_coverages_and_gq_qualities(
                 coverage, gq_quals)
             yield (f"{refflat_record.gene}\t{refflat_record.transcript}\t"
