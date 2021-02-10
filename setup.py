@@ -36,7 +36,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Sander Bollen, Redmar van den Berg",
     author_email="KG_bioinf@lumc.nl",
-    url="https://git.lumc.nl/klinische-genetica/capture-lumc/vtools",
+    url="https://github.com/lumc/vtools",
     license="MIT",
     package_dir={"": "src"},
     packages=find_packages("src"),
