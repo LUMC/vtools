@@ -46,11 +46,10 @@ setup(
     python_requires=">=3.6",
     zip_safe=False,
     include_package_data=True,
-    setup_requires=["cython", "numpy"],
     install_requires=[
         "click",
         "cyvcf2",
-        "numpy",
+        "numpy>=1.20",
         "tqdm"
     ],
     entry_points={
