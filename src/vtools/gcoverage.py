@@ -51,7 +51,7 @@ def qualmean(quals: np.ndarray) -> float:
     https://gigabaseorgigabyte.wordpress.com/2017/06/26/averaging-basecall-quality-scores-the-right-way/
     https://git.lumc.nl/klinische-genetica/capture-lumc/vtools/issues/3
     """
-    return -10*np.log10(np.mean(np.power(10, quals/-10)))
+    return -10 * np.log10(np.mean(np.power(10, quals / -10)))
 
 
 class CovStats(NamedTuple):
@@ -73,12 +73,23 @@ class CovStats(NamedTuple):
 
     @classmethod
     def from_coverages_and_gq_qualities(cls,
-                                        coverages: np.ndarray,
-                                        gq_qualities: np.ndarray):
+                                        coverage_list: List[int],
+                                        gq_quality_list: List[float]):
         """Generate a CovStats object from an array of coverages and genome
         qualities."""
-        total_coverages = coverages.size
-        total_qualities = gq_qualities.size
+        total_coverages = len(coverage_list)
+        total_qualities = len(gq_quality_list)
+
+        # np.fromiter is faster than np.array in this case. Also specifying the
+        # length allows allocating the array at once in memory, which is
+        # faster. Use int64 and float64 which are compatible with python
+        # integers and floats. Using smaller 32-bit types does not improve
+        # performance noticably.
+        coverages = np.fromiter(
+            coverage_list, dtype=np.int64, count=total_coverages)
+        gq_qualities = np.fromiter(
+            gq_quality_list, dtype=np.float64, count=total_qualities)
+
         # numpy.greater_equal returns a list of Booleans. But since true==1
         # these can be summed for the total count.
         perc_at_least_dp = [
@@ -157,7 +168,7 @@ class RefRecord(NamedTuple):
             if e > self.cds_end:
                 e = self.cds_end
             reg = Region(self.contig, s, e)
-            if reg.end <= reg.start:   # utr exons
+            if reg.end <= reg.start:  # utr exons
                 continue
             regs.append(reg)
         return regs
@@ -172,25 +183,22 @@ def file_to_refflat_records(filename: Union[str, os.PathLike]
 
 def feature_to_coverage_and_quality_arrays(feature: List[Region],
                                            vcfs: List[cyvcf2.VCF]
-                                           ) -> Tuple[np.ndarray, np.ndarray]:
+                                           ) -> Tuple[List[int], List[float]]:
     depths: List[int] = []
-    gen_quals: List[int] = []
+    gen_quals: List[float] = []
     for vcf in vcfs:
         for region in feature:
             covs, quals = region_and_vcf_to_coverage_and_quality_lists(
                 region, vcf)
             depths.extend(covs)
             gen_quals.extend(quals)
-    # np.fromiter is faster than np.array in this case. Also specifying the
-    # length allows allocating the array at once in memory, which is faster.
-    # Use int64 which is compatible with python integer. Using smaller
-    # integers does not improve performance noticably.
-    return (np.fromiter(depths, dtype=np.int64, count=len(depths)),
-            np.fromiter(gen_quals, dtype=np.int64, count=len(gen_quals)))
+    return depths, gen_quals
 
 
-def region_and_vcf_to_coverage_and_quality_lists(region: Region,
-                                                 vcf: cyvcf2.VCF):
+def region_and_vcf_to_coverage_and_quality_lists(
+        region: Region,
+        vcf: cyvcf2.VCF
+    ) -> Tuple[List[int], List[float]]:
     """
     Gets the coverages and qualities for a particular region in a VCF.
 
@@ -245,6 +253,6 @@ def refflat_and_gvcfs_to_tsv(refflat_file: str,
                 feature_to_coverage_and_quality_arrays(
                     refflat_record.cds_exons, gvcf_readers))
             covstats = CovStats.from_coverages_and_gq_qualities(
-                    coverage, gq_quals)
+                coverage, gq_quals)
             yield (f"{refflat_record.gene}\t{refflat_record.transcript}\t"
                    f"{str(covstats)}")
