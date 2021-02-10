@@ -26,6 +26,7 @@ class BuildExt(build_ext):
         ext.include_dirs = [numpy_include]
         super().build_extension(ext)
 
+
 setup(
     name="v-tools",
     version="1.1.1-dev",
