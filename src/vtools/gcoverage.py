@@ -108,7 +108,11 @@ class CovStats(NamedTuple):
                    *perc_at_least_gq)
 
     @classmethod
-    def header(cls):
+    def header(cls, compact: bool = False):
+        if compact:
+            return ("mean_dp\tmean_gq\tmedian_dp\tmedian_gq\t%dp>=10\t"
+                    "%dp>=20\t%dp>=30\t%dp>=50\t%dp>=100\t%gq>=10\t%gq>=20\t"
+                    "%gq>=30\t%gq>=50\t%gq>=90")
         return "\t".join(cls.__annotations__.keys())
 
     def __str__(self):
