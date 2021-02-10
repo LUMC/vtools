@@ -44,14 +44,14 @@ def test_covstats_from_coverages_and_gq_qualities():
     # these values are taken for easy testing.
     # The numbers in coverages are  randomly generated but are are sorted for
     # convenience: list(sorted([random.randint(0, 100) for _ in range(100)]))
-    coverages = np.array([
+    coverages = [
         1, 2, 7, 8, 8, 9, 9, 9, 9, 11, 11, 14, 17, 19, 22, 23, 23, 24, 24, 25,
         26, 27, 27, 27, 27, 29, 29, 32, 34, 34, 35, 36, 37, 39, 39, 41, 41, 44,
         44, 44, 46, 47, 47, 48, 48, 50, 50, 51, 53, 54, 54, 56, 56, 56, 57, 58,
         59, 59, 63, 63, 65, 66, 67, 67, 67, 70, 70, 71, 73, 73, 76, 76, 77, 77,
         79, 79, 80, 81, 82, 84, 84, 85, 86, 86, 86, 91, 91, 93, 93, 93, 93, 94,
-        94, 95, 95, 95, 96, 96, 97, 97])
-    qualities = np.array([5, 15, 25, 35, 45, 75, 95])
+        94, 95, 95, 95, 96, 96, 97, 97]
+    qualities = [5, 15, 25, 35, 45, 75, 95]
     covstats = CovStats.from_coverages_and_gq_qualities(coverages, qualities)
     assert math.isclose(covstats.mean_gq, 12.9934485294235)
     assert covstats.median_gq == 35
@@ -146,7 +146,8 @@ def test_region_and_vcf_to_coverage_and_quality_lists():
     assert len(coverages) == len(region)
     assert len(coverages) == len(qualities)
     assert coverages == [7, 8, 9, 9, 9, 10, 10, 10, 10, 10, 10]
-    assert qualities == [21, 24, 27, 27, 27, 30, 30, 30, 30, 30, 30]
+    assert qualities == [21.0, 24.0, 27.0, 27.0, 27.0, 30.0, 30.0, 30.0, 30.0,
+                         30.0, 30.0]
 
 
 def test_feature_to_coverage_and_quality_arrays():
@@ -157,7 +158,8 @@ def test_feature_to_coverage_and_quality_arrays():
         regions, [test_vcf])
     assert len(coverages) == len(qualities)
     assert len(coverages) == sum(len(region) for region in regions)
-    assert list(coverages) == [2, 3, 4, 4, 4, 5, 5, 6, 6, 6, 8, 9, 9, 9, 10,
-                               10, 10, 10, 10, 10]
-    assert list(qualities) == [6, 9, 12, 12, 12, 15, 15, 18, 0, 18, 24, 27, 27,
-                               27, 30, 30, 30, 30, 30, 30]
+    assert coverages == [2, 3, 4, 4, 4, 5, 5, 6, 6, 6, 8, 9, 9, 9, 10, 10, 10,
+                         10, 10, 10]
+    assert qualities == [6.0, 9.0, 12.0, 12.0, 12.0, 15.0, 15.0, 18.0, 0.0,
+                         18.0, 24.0, 27.0, 27.0, 27.0, 30.0, 30.0, 30.0, 30.0,
+                         30.0, 30.0]
