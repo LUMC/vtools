@@ -236,11 +236,12 @@ def region_and_vcf_to_coverage_and_quality_lists(
 
 def refflat_and_gvcfs_to_tsv(refflat_file: str,
                              gvcfs: Iterable[str],
-                             per_exon=False
+                             per_exon: bool = True,
+                             compact_header: bool = False,
                              ) -> Generator[str, None, None]:
     gvcf_readers = [cyvcf2.VCF(gvcf) for gvcf in gvcfs]
     if per_exon:
-        yield "gene\ttranscript\texon\t" + CovStats.header()
+        yield "gene\ttranscript\texon\t" + CovStats.header(compact_header)
         for refflat_record in file_to_refflat_records(refflat_file):
             total_exons = len(refflat_record.exons)
             gene = refflat_record.gene
@@ -254,7 +255,7 @@ def refflat_and_gvcfs_to_tsv(refflat_file: str,
                 exon = i + 1 if refflat_record.forward else total_exons - i
                 yield f"{gene}\t{transcript}\t{exon}\t{str(covstats)}"
     else:
-        yield "gene\ttranscript\t" + CovStats.header()
+        yield "gene\ttranscript\t" + CovStats.header(compact_header)
         for refflat_record in file_to_refflat_records(refflat_file):
             coverage, gq_quals = (
                 feature_to_coverage_and_quality_lists(
