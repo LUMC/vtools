@@ -6,13 +6,15 @@ setup.py
 :copyright: (c) 2018 Leiden University Medical Center
 :license: MIT
 """
-from os.path import abspath, dirname, join
+from pathlib import Path
+
+import pkg_resources
 
 from setuptools import Extension, find_packages, setup
 
-readme_file = join(abspath(dirname(__file__)), "README.md")
-with open(readme_file) as desc_handle:
-    long_desc = desc_handle.read()
+numpy_include = str(Path(pkg_resources.get_distribution("numpy").location,
+                         "numpy", "core", "include"))
+long_desc = (Path(__file__).parent / "README.md").read_text()
 
 setup(
     name="v-tools",
@@ -54,5 +56,6 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Topic :: Scientific/Engineering :: Bio-Informatics"
     ],
-    ext_modules=[Extension("vtools.optimized", ["src/vtools/optimized.pyx"])]
+    ext_modules=[Extension("vtools.optimized", ["src/vtools/optimized.pyx"],
+                           include_dirs=[numpy_include])]
 )
