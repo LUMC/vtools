@@ -30,7 +30,7 @@ import numpy as np
 import pytest
 
 from vtools.gcoverage import CovStats, RefRecord,  Region, \
-    feature_to_coverage_and_quality_arrays, file_to_refflat_records, \
+    feature_to_coverage_and_quality_lists, file_to_refflat_records, \
     qualmean, region_and_vcf_to_coverage_and_quality_lists
 
 
@@ -154,7 +154,7 @@ def test_feature_to_coverage_and_quality_arrays():
     test_vcf_path = Path(__file__).parent / "gcoverage_data" / "test.g.vcf.gz"
     test_vcf = VCF(str(test_vcf_path))
     regions = [Region("chr1", 1, 10), Region("chr1", 21, 30)]
-    coverages, qualities = feature_to_coverage_and_quality_arrays(
+    coverages, qualities = feature_to_coverage_and_quality_lists(
         regions, [test_vcf])
     assert len(coverages) == len(qualities)
     assert len(coverages) == sum(len(region) for region in regions)

@@ -181,9 +181,13 @@ def file_to_refflat_records(filename: Union[str, os.PathLike]
             yield RefRecord.from_line(line)
 
 
-def feature_to_coverage_and_quality_arrays(feature: List[Region],
-                                           vcfs: List[cyvcf2.VCF]
-                                           ) -> Tuple[List[int], List[float]]:
+def feature_to_coverage_and_quality_lists(feature: List[Region],
+                                          vcfs: List[cyvcf2.VCF]
+                                          ) -> Tuple[List[int], List[float]]:
+    """
+    Wrapper around region_and_vcf_to_coverage_and_quality_lists that returns
+    the values for multiple regions in multiple vcfs.
+    """
     depths: List[int] = []
     gen_quals: List[float] = []
     for vcf in vcfs:
@@ -198,13 +202,12 @@ def feature_to_coverage_and_quality_arrays(feature: List[Region],
 def region_and_vcf_to_coverage_and_quality_lists(
         region: Region,
         vcf: cyvcf2.VCF
-    ) -> Tuple[List[int], List[float]]:
+        ) -> Tuple[List[int], List[float]]:
     """
     Gets the coverages and qualities for a particular region in a VCF.
-
     """
     depths: List[int] = []
-    gen_quals: List[int] = []
+    gen_quals: List[float] = []
     for variant in vcf(str(region)):
         # max and min to make sure the positions outside of the region are
         # not considered.
@@ -240,7 +243,7 @@ def refflat_and_gvcfs_to_tsv(refflat_file: str,
             transcript = refflat_record.transcript
             for i, region in enumerate(refflat_record.exons):
                 coverage, gq_quals = (
-                    feature_to_coverage_and_quality_arrays(
+                    feature_to_coverage_and_quality_lists(
                         [region], gvcf_readers))
                 covstats = CovStats.from_coverages_and_gq_qualities(
                     coverage, gq_quals)
@@ -250,7 +253,7 @@ def refflat_and_gvcfs_to_tsv(refflat_file: str,
         yield "gene\ttranscript\t" + CovStats.header()
         for refflat_record in file_to_refflat_records(refflat_file):
             coverage, gq_quals = (
-                feature_to_coverage_and_quality_arrays(
+                feature_to_coverage_and_quality_lists(
                     refflat_record.cds_exons, gvcf_readers))
             covstats = CovStats.from_coverages_and_gq_qualities(
                 coverage, gq_quals)
