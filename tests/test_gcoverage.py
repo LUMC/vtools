@@ -109,6 +109,14 @@ def test_refrecord_cds_exons():
                                    Region("chr1", 17, 17)]
 
 
+def test_refrecord_invalid_strand():
+    record_line = ("GENE\tTRANSCRIPT\tcontig\tPLUS\t100\t1000\t300\t600\t5\t"
+                   "100,250,400,550,800,\t200,350,500,650,900,")
+    with pytest.raises(ValueError) as error:
+        RefRecord.from_line(record_line)
+    error.match("Invalid strand")
+
+
 def test_refrecord_forward():
     record_line = ("GENE\tTRANSCRIPT\tcontig\t+\t100\t1000\t300\t600\t5\t"
                    "100,250,400,550,800,\t200,350,500,650,900,")
@@ -119,15 +127,17 @@ def test_refrecord_forward():
 def test_refrecord_too_many_columns():
     record_line = ("GENE\tTRANSCRIPT\tcontig\t+\t100\t1000\t300\t600\t5\t"
                    "100,250,400,550,800,\t200,350,500,650,900,\tnonsense")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as error:
         RefRecord.from_line(record_line)
+    error.match("exactly 11")
 
 
 def test_refrecord_too_little_columns():
     record_line = ("GENE\t+\t100\t1000\t300\t600\t5\t"
                    "100,250,400,550,800,\t200,350,500,650,900,\tnonsense")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as error:
         RefRecord.from_line(record_line)
+    error.match("exactly 11")
 
 
 def test_region_string():
