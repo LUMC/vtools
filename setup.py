@@ -6,23 +6,37 @@ setup.py
 :copyright: (c) 2018 Leiden University Medical Center
 :license: MIT
 """
-from os.path import abspath, dirname, join
+from pathlib import Path
 
-from setuptools import setup, find_packages, Extension
+import pkg_resources
 
-readme_file = join(abspath(dirname(__file__)), "README.md")
-with open(readme_file) as desc_handle:
-    long_desc = desc_handle.read()
+from setuptools import Extension, find_packages, setup
+from setuptools.command.build_ext import build_ext
+
+long_desc = (Path(__file__).parent / "README.md").read_text()
+
+
+class BuildExt(build_ext):
+    def build_extension(self, ext: Extension):
+        # Only get numpy location inside setup_requires environment during
+        # the build_ext phase.
+        numpy_include = str(
+            Path(pkg_resources.get_distribution("numpy").location,
+                 "numpy", "core", "include"))
+        ext.include_dirs = [numpy_include]
+        super().build_extension(ext)
+
 
 setup(
     name="v-tools",
     version="1.1.1-dev",
     description="Various tools operating over VCF files",
     long_description=long_desc,
+    cmdclass={"build_ext": BuildExt},
     long_description_content_type="text/markdown",
     author="Sander Bollen, Redmar van den Berg",
     author_email="KG_bioinf@lumc.nl",
-    url="https://git.lumc.nl/klinische-genetica/capture-lumc/vtools",
+    url="https://github.com/lumc/vtools",
     license="MIT",
     package_dir={"": "src"},
     packages=find_packages("src"),
@@ -32,11 +46,10 @@ setup(
     python_requires=">=3.6",
     zip_safe=False,
     include_package_data=True,
-    setup_requires=["cython", "numpy"],
     install_requires=[
         "click",
         "cyvcf2",
-        "numpy",
+        "numpy>=1.19",
         "tqdm"
     ],
     entry_points={

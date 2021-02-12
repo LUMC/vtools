@@ -6,16 +6,19 @@ vtools.cli
 :copyright: (c) Leiden University Medical Center
 :license: MIT
 """
-import os
-import json
-import click
-from cyvcf2 import VCF, Writer
 import gzip
+import json
+import os
+
+import click
+
+from cyvcf2 import VCF, Writer  # type: ignore
 
 from .evaluate import site_concordancy
-from .filter import FilterParams, FilterClass, Filterer
-from .stats import Stats
+from .filter import FilterClass, FilterParams,  Filterer
 from .gcoverage import refflat_and_gvcfs_to_tsv
+from .stats import Stats
+
 
 @click.command()
 @click.option("-c", "--call-vcf", type=click.Path(exists=True),

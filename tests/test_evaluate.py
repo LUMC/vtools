@@ -1,10 +1,11 @@
-import pytest
 from collections import defaultdict
 
-from vtools.evaluate import site_concordancy
-from vtools.evaluate import parse_variants
+from cyvcf2 import VCF  # type: ignore
 
-from cyvcf2 import VCF
+import pytest
+
+from vtools.evaluate import parse_variants
+from vtools.evaluate import site_concordancy
 
 
 @pytest.fixture(scope='module')

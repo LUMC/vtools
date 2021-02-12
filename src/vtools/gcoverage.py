@@ -1,15 +1,33 @@
-"""
-vtools.gcoverage
-~~~~~~~~~~~~~~~~
+# MIT License
+#
+# Copyright (c) 2018, 2020 Leiden University Medical Center
+# Copyright (c) 2018 Sander Bollen
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
-:copyright: (c) 2018 Sander Bollen
-:copyright: (c) 2018 Leiden University Medical Center
-:license: MIT
 """
-import itertools
+Calculate coverage statistics using GVCF files.
+"""
+
+import os
 from typing import Generator, Iterable, List, NamedTuple, Tuple, Union
 
-import cyvcf2
+import cyvcf2  # type: ignore
 
 import numpy as np
 
@@ -23,6 +41,9 @@ class Region(NamedTuple):
     def __str__(self):
         return "{0}:{1}-{2}".format(self.chr, self.start, self.end)
 
+    def __len__(self):
+        return self.end - self.start + 1  # +1 since the position is one-based.
+
 
 def qualmean(quals: np.ndarray) -> float:
     """
@@ -30,19 +51,7 @@ def qualmean(quals: np.ndarray) -> float:
     https://gigabaseorgigabyte.wordpress.com/2017/06/26/averaging-basecall-quality-scores-the-right-way/
     https://git.lumc.nl/klinische-genetica/capture-lumc/vtools/issues/3
     """
-    return -10*np.log10(np.mean(np.power(10, quals/-10)))
-
-
-def fractions_at_least(values: np.ndarray,
-                       values_at_least: Iterable[Union[int, float]]
-                       ) -> List[float]:
-    """Counts which fraction of the values is higher than the value in
-    values at least."""
-    total = values.size
-    # numpy.greater_equal returns a list of Booleans. But since true==1
-    # these can be summed for the total count.
-    return([np.greater_equal(values, at_least).sum() / total
-            for at_least in values_at_least])
+    return -10 * np.log10(np.mean(np.power(10, quals / -10)))
 
 
 class CovStats(NamedTuple):
@@ -64,25 +73,49 @@ class CovStats(NamedTuple):
 
     @classmethod
     def from_coverages_and_gq_qualities(cls,
-                                        coverages: np.ndarray,
-                                        gq_qualities: np.ndarray):
+                                        coverage_list: List[int],
+                                        gq_quality_list: List[float]):
         """Generate a CovStats object from an array of coverages and genome
         qualities."""
-        perc_at_least_dp = [fraction * 100 for fraction in
-                            fractions_at_least(coverages,
-                                               (10, 20, 30, 50, 100))]
-        perc_at_least_gq = [fraction * 100 for fraction in
-                            fractions_at_least(gq_qualities,
-                                               (10, 20, 30, 50, 90))]
-        return cls(np.mean(coverages),
+        total_coverages = len(coverage_list)
+        total_qualities = len(gq_quality_list)
+
+        # np.fromiter is faster than np.array in this case. Also specifying the
+        # length allows allocating the array at once in memory, which is
+        # faster. Use int64 and float64 which are compatible with python
+        # integers and floats. Using smaller 32-bit types does not improve
+        # performance noticably.
+        coverages = np.fromiter(
+            coverage_list, dtype=np.int64, count=total_coverages)
+        gq_qualities = np.fromiter(
+            gq_quality_list, dtype=np.float64, count=total_qualities)
+
+        # np.count_nonzero checks the __bool__ method of objects. (In python2
+        # this was called __nonzero__). So this is the appropriate way for
+        # counting booleans. (Sum also works but is less correct and slower).
+        perc_at_least_dp = [
+            np.count_nonzero(np.greater_equal(coverages, at_least))
+            / total_coverages * 100  # percentage calculation.
+            for at_least in (10, 20, 30, 50, 100)]
+        perc_at_least_gq = [
+            np.count_nonzero(np.greater_equal(gq_qualities, at_least))
+            / total_qualities * 100
+            for at_least in (10, 20, 30, 50, 90)]
+
+        # Explicit float conversion needed as numpy does not guarantee a float.
+        return cls(float(np.mean(coverages)),
                    qualmean(gq_qualities),
-                   np.median(coverages),
-                   np.median(gq_qualities),
+                   float(np.median(coverages)),
+                   float(np.median(gq_qualities)),
                    *perc_at_least_dp,
                    *perc_at_least_gq)
 
     @classmethod
-    def header(cls):
+    def header(cls, compact: bool = False):
+        if compact:
+            return ("mean_dp\tmean_gq\tmedian_dp\tmedian_gq\t%dp>=10\t"
+                    "%dp>=20\t%dp>=30\t%dp>=50\t%dp>=100\t%gq>=10\t%gq>=20\t"
+                    "%gq>=30\t%gq>=50\t%gq>=90")
         return "\t".join(cls.__annotations__.keys())
 
     def __str__(self):
@@ -105,15 +138,20 @@ class RefRecord(NamedTuple):
     @classmethod
     def from_line(cls, line):
         contents = line.strip().split("\t")
-        if len(contents) < 11:
-            raise ValueError("refFlat line must have at least 11 fields")
+        if len(contents) != 11:
+            raise ValueError(f"refFlat line must have exactly 11 fields. "
+                             f"Error on line: {line}.")
         gene = contents[0]
         transcript = contents[1]
         contig = contents[2]
-        if "-" in contents[3].strip():
+        strand = contents[3].strip()
+        if strand == "+":
+            forward = True
+        elif strand == "-":
             forward = False
         else:
-            forward = True
+            raise ValueError(f"Invalid strand: '{strand}'. Strand should be "
+                             f"'+' or '-'. Error on line: {line}. ")
         start = int(contents[4])
         end = int(contents[5])
         cds_start = int(contents[6])
@@ -125,96 +163,110 @@ class RefRecord(NamedTuple):
 
     @property
     def exons(self) -> List[Region]:
-        regs = []
-        for s, e in zip(self.exon_starts, self.exon_ends):
-            regs.append(Region(self.contig, s, e))
-        return regs
+        return [Region(self.contig, s, e)
+                for s, e in zip(self.exon_starts, self.exon_ends)]
 
     @property
-    def cds_exons(self) -> List[Tuple[int, Region]]:
+    def cds_exons(self) -> List[Region]:
         regs = []
-        for i, (s, e) in enumerate(zip(self.exon_starts, self.exon_ends)):
+        for s, e in zip(self.exon_starts, self.exon_ends):
             if s < self.cds_start:
                 s = self.cds_start
             if e > self.cds_end:
                 e = self.cds_end
             reg = Region(self.contig, s, e)
-            if reg.end <= reg.start:   # utr exons
+            if reg.end <= reg.start:  # utr exons
                 continue
-            regs.append((i, reg))
+            regs.append(reg)
         return regs
 
 
-def file_to_refflat_records(filename: str) -> Generator[RefRecord, None, None]:
+def file_to_refflat_records(filename: Union[str, os.PathLike]
+                            ) -> Generator[RefRecord, None, None]:
     with open(filename, "rt") as file_h:
         for line in file_h:
             yield RefRecord.from_line(line)
 
 
-def feature_to_vcf_records(feature: List[Region], sample_vcfs: List[cyvcf2.VCF]
-                           ) -> Generator[cyvcf2.Variant, None, None]:
-    for sample_vcf in sample_vcfs:
-        for region in feature:
-            for record in sample_vcf(str(region)):
-                yield record
-
-
-def gvcf_records_to_coverage_and_quality_arrays(
-        gvcf_records: Iterable[cyvcf2.Variant],
-        maxlen: int = 15000
-        ) -> Tuple[np.ndarray, np.ndarray]:
+def feature_to_coverage_and_quality_lists(feature: List[Region],
+                                          vcfs: List[cyvcf2.VCF]
+                                          ) -> Tuple[List[int], List[float]]:
     """
-    Get coverage and genome quality for all gvcf records per base
-
-    Some records may be huge, especially those around centromeres.
-    Therefore, there is a maxlen argument. Maximally `maxlen` values
-    are used per variant.
+    Wrapper around region_and_vcf_to_coverage_and_quality_lists that returns
+    the values for multiple regions in multiple vcfs.
     """
     depths: List[int] = []
-    gen_quals: List[int] = []
-    for record in gvcf_records:
-        size = record.end - record.start
+    gen_quals: List[float] = []
+    for vcf in vcfs:
+        for region in feature:
+            covs, quals = region_and_vcf_to_coverage_and_quality_lists(
+                region, vcf)
+            depths.extend(covs)
+            gen_quals.extend(quals)
+    return depths, gen_quals
+
+
+def region_and_vcf_to_coverage_and_quality_lists(
+        region: Region,
+        vcf: cyvcf2.VCF
+        ) -> Tuple[List[int], List[float]]:
+    """
+    Gets the coverages and qualities for a particular region in a VCF.
+    """
+    depths: List[int] = []
+    gen_quals: List[float] = []
+    for variant in vcf(str(region)):
+        # max and min to make sure the positions outside of the region are
+        # not considered.
+        # Technically max and min should only be considered for the first
+        # and last record respectively. But doing it for every record does not
+        # affect the outcome while also being correct for the edge case with
+        # only one record (which is both first and last) and using
+        # significantly less code. Also the extra logic needed is probably
+        # slower than running max and min on everything.
+        start = max(region.start - 1, variant.start)  # -1 for one-based pos.
+        end = min(region.end, variant.end)
+        size = end - start
+        gq = variant.gt_quals[0]
         try:
-            dp = record.format("DP")[0][0]
+            dp = variant.format("DP")[0][0]
         except TypeError:
             dp = 0
-        gq = record.gt_quals[0]
-        record_size = min(size, maxlen)  # Limit size to maxlen
-        depths.extend([dp] * record_size)
-        gen_quals.extend([gq] * record_size)
-    # np.fromiter is faster than np.array in this case. Also specifying the
-    # length allows allocating the array at once in memory, which is faster.
-    return (np.fromiter(depths, dtype=np.int, count=len(depths)),
-            np.fromiter(gen_quals, dtype=np.int, count=len(gen_quals)))
+        depths.extend([dp] * size)
+        gen_quals.extend([gq] * size)
+    return depths, gen_quals
 
 
 def refflat_and_gvcfs_to_tsv(refflat_file: str,
                              gvcfs: Iterable[str],
-                             per_exon=False
+                             per_exon: bool = True,
+                             compact_header: bool = False,
                              ) -> Generator[str, None, None]:
     gvcf_readers = [cyvcf2.VCF(gvcf) for gvcf in gvcfs]
     if per_exon:
-        yield "gene\ttranscript\texon\t" + CovStats.header()
+        yield "gene\ttranscript\texon\t" + CovStats.header(compact_header)
         for refflat_record in file_to_refflat_records(refflat_file):
             total_exons = len(refflat_record.exons)
             gene = refflat_record.gene
             transcript = refflat_record.transcript
             for i, region in enumerate(refflat_record.exons):
-                records = feature_to_vcf_records([region], gvcf_readers)
                 coverage, gq_quals = (
-                    gvcf_records_to_coverage_and_quality_arrays(records))
+                    feature_to_coverage_and_quality_lists(
+                        [region], gvcf_readers))
                 covstats = CovStats.from_coverages_and_gq_qualities(
                     coverage, gq_quals)
                 exon = i + 1 if refflat_record.forward else total_exons - i
                 yield f"{gene}\t{transcript}\t{exon}\t{str(covstats)}"
     else:
-        yield "gene\ttranscript\t" + CovStats.header()
+        yield "gene\ttranscript\t" + CovStats.header(compact_header)
         for refflat_record in file_to_refflat_records(refflat_file):
-            regions = [x[1] for x in refflat_record.cds_exons]
-            records = feature_to_vcf_records(regions, gvcf_readers)
+            region = Region(refflat_record.contig,
+                            refflat_record.start,
+                            refflat_record.end)
             coverage, gq_quals = (
-                gvcf_records_to_coverage_and_quality_arrays(records))
+                feature_to_coverage_and_quality_lists(
+                    [region], gvcf_readers))
             covstats = CovStats.from_coverages_and_gq_qualities(
-                    coverage, gq_quals)
+                coverage, gq_quals)
             yield (f"{refflat_record.gene}\t{refflat_record.transcript}\t"
                    f"{str(covstats)}")
