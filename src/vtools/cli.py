@@ -129,7 +129,10 @@ def stats_cli(input):
     print(stats.as_json)
 
 
-@click.command()
+@click.command(help="Calculate coverage statistics using one or more "
+                    "single-sample gvcf files. Multisample gvcf files are not "
+                    "supported. The statistics are calculated over the "
+                    "intervals in the refflat file.")
 @click.argument("input-gvcf",
                 nargs=-1,
                 type=click.Path(exists=True, readable=True),
