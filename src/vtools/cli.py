@@ -141,14 +141,23 @@ def stats_cli(input):
               type=click.Path(exists=True, readable=True),
               required=True,
               help="Path to refFlat file")
-@click.option("--per-exon/--per-transcript",
-              default=True,
-              help="Collect metrics per exon or per transcript")
+@click.option('--per-exon', 'region_of_interest',
+              flag_value='exon', default=True,
+              help="Collect metrics per exon")
+@click.option('--per-transcript', 'region_of_interest',
+              flag_value='transcript',
+              help="Collect metrics per transcript")
+@click.option('--transcript-cds-exons', 'region_of_interest',
+              flag_value="transcript_cds_exons",
+              help="Collect metrics per transcript, only considering the "
+                   "exons in the coding region.")
 @click.option("-s", "--short-column-names",
               is_flag=True,
               help="Print shorter column names for easier viewing on a "
                    "terminal.")
-def gcoverage_cli(input_gvcf, refflat_file, per_exon, short_column_names):
-    for line in refflat_and_gvcfs_to_tsv(refflat_file, input_gvcf, per_exon,
+def gcoverage_cli(input_gvcf, refflat_file, region_of_interest,
+                  short_column_names):
+    for line in refflat_and_gvcfs_to_tsv(refflat_file, input_gvcf,
+                                         region_of_interest,
                                          short_column_names):
         print(line)

@@ -237,12 +237,24 @@ def region_and_vcf_to_coverage_and_quality_lists(
     return depths, gen_quals
 
 
+def refflat_record_to_regions(refflat_record: RefRecord,
+                              region_of_interest: str) -> List[Region]:
+    if region_of_interest == "transcript":
+        return [Region(refflat_record.contig, refflat_record.start,
+                       refflat_record.end)]
+    elif region_of_interest == "transcript_cds_exons":
+        return refflat_record.cds_exons
+    else:
+        raise ValueError(f"Unsupported region: {region_of_interest}")
+
+
 def refflat_and_gvcfs_to_tsv(refflat_file: str,
                              gvcfs: Iterable[str],
-                             per_exon: bool = True,
+                             region_of_interest: str,
                              compact_header: bool = False,
                              ) -> Generator[str, None, None]:
     gvcf_readers = [cyvcf2.VCF(gvcf) for gvcf in gvcfs]
+    per_exon = region_of_interest == "exon"
     if per_exon:
         yield "gene\ttranscript\texon\t" + CovStats.header(compact_header)
         for refflat_record in file_to_refflat_records(refflat_file):
@@ -260,12 +272,11 @@ def refflat_and_gvcfs_to_tsv(refflat_file: str,
     else:
         yield "gene\ttranscript\t" + CovStats.header(compact_header)
         for refflat_record in file_to_refflat_records(refflat_file):
-            region = Region(refflat_record.contig,
-                            refflat_record.start,
-                            refflat_record.end)
+            regions = refflat_record_to_regions(refflat_record,
+                                                region_of_interest)
             coverage, gq_quals = (
                 feature_to_coverage_and_quality_lists(
-                    [region], gvcf_readers))
+                    regions, gvcf_readers))
             covstats = CovStats.from_coverages_and_gq_qualities(
                 coverage, gq_quals)
             yield (f"{refflat_record.gene}\t{refflat_record.transcript}\t"
