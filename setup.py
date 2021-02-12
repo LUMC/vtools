@@ -8,23 +8,9 @@ setup.py
 """
 from pathlib import Path
 
-import pkg_resources
-
 from setuptools import Extension, find_packages, setup
-from setuptools.command.build_ext import build_ext
 
 long_desc = (Path(__file__).parent / "README.md").read_text()
-
-
-class BuildExt(build_ext):
-    def build_extension(self, ext: Extension):
-        # Only get numpy location inside setup_requires environment during
-        # the build_ext phase.
-        numpy_include = str(
-            Path(pkg_resources.get_distribution("numpy").location,
-                 "numpy", "core", "include"))
-        ext.include_dirs = [numpy_include]
-        super().build_extension(ext)
 
 
 setup(
@@ -32,7 +18,6 @@ setup(
     version="2.0.0-dev",
     description="Various tools operating over VCF files",
     long_description=long_desc,
-    cmdclass={"build_ext": BuildExt},
     long_description_content_type="text/markdown",
     author="Sander Bollen, Redmar van den Berg",
     author_email="KG_bioinf@lumc.nl",
