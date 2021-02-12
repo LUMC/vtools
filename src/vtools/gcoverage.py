@@ -235,6 +235,8 @@ def region_and_vcf_to_coverage_and_quality_lists(
         try:
             dp = variant.format("DP")[0][0]
         except TypeError:
+            # If there is no DP field, None will be returned.
+            # None[0] returns TypeError: 'NoneType' object is not subscriptable
             dp = 0
         depths.extend([dp] * size)
         gen_quals.extend([gq] * size)
