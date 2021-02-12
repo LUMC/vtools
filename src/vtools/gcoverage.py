@@ -90,14 +90,17 @@ class CovStats(NamedTuple):
         gq_qualities = np.fromiter(
             gq_quality_list, dtype=np.float64, count=total_qualities)
 
-        # numpy.greater_equal returns a list of Booleans. But since true==1
-        # these can be summed for the total count.
+        # np.count_nonzero checks the __bool__ method of objects. (In python2
+        # this was called __nonzero__). So this is the appropriate way for
+        # counting booleans. (Sum also works but is less correct and slower).
         perc_at_least_dp = [
-            np.greater_equal(coverages, at_least).sum() / total_coverages
-            * 100 for at_least in (10, 20, 30, 50, 100)]
+            np.count_nonzero(np.greater_equal(coverages, at_least))
+            / total_coverages * 100  # percentage calculation.
+            for at_least in (10, 20, 30, 50, 100)]
         perc_at_least_gq = [
-            np.greater_equal(gq_qualities, at_least).sum() / total_qualities
-            * 100 for at_least in (10, 20, 30, 50, 90)]
+            np.count_nonzero(np.greater_equal(gq_qualities, at_least))
+            / total_qualities * 100
+            for at_least in (10, 20, 30, 50, 90)]
 
         # Explicit float conversion needed as numpy does not guarantee a float.
         return cls(float(np.mean(coverages)),
