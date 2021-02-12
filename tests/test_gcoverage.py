@@ -100,6 +100,15 @@ def test_refrecord():
     ]
 
 
+def test_refrecord_cds_exons():
+    refrecord_line = ("GENE1\tTR0001\tchr1\t+\t11\t20\t13\t17\t3\t"
+                      "11,14,17,\t12,16,19,")
+    refrecord = RefRecord.from_line(refrecord_line)
+    assert len(refrecord.cds_exons) == 2
+    assert refrecord.cds_exons == [Region("chr1", 14, 16),
+                                   Region("chr1", 17, 17)]
+
+
 def test_refrecord_forward():
     record_line = ("GENE\tTRANSCRIPT\tcontig\t+\t100\t1000\t300\t600\t5\t"
                    "100,250,400,550,800,\t200,350,500,650,900,")
@@ -192,3 +201,21 @@ def test_refflat_and_gvcfs_to_tsv_per_transcript_verbose():
     assert result[3] == ("GENE3\tTR0006\t32.40\t49.23\t32.00\t79.00\t"
                          "100.00\t100.00\t100.00\t0.00\t0.00\t"
                          "100.00\t100.00\t100.00\t80.00\t20.00")
+
+
+def test_refflat_and_gvcfs_to_tsv_per_transcript_cds_exons():
+    data_dir = Path(__file__).parent / "gcoverage_data"
+    gvcfs = [str(data_dir / "test.g.vcf.gz")]
+    refflat = data_dir / "test.refflat"
+    lines = refflat_and_gvcfs_to_tsv(refflat, gvcfs,
+                                     region_of_interest="transcript_cds_exons",
+                                     compact_header=False)
+    result = list(lines)
+    assert result[0] == ("gene\ttranscript\t" + CovStats.header(False))
+    assert result[1].startswith("GENE1\tTR0001")
+    assert result[2].startswith("GENE3\tTR0006")
+    # GENE2 Should be omitted as it has now coding exons
+    assert len(result) == 3
+    assert result[1] == ("GENE1\tTR0001\t6.00\t5.82\t6.00\t18.00\t"
+                         "0.00\t0.00\t0.00\t0.00\t0.00\t"
+                         "75.00\t0.00\t0.00\t0.00\t0.00")

@@ -175,7 +175,11 @@ class RefRecord(NamedTuple):
             if e > self.cds_end:
                 e = self.cds_end
             reg = Region(self.contig, s, e)
-            if reg.end <= reg.start:  # utr exons
+            # Since positioning is one-based reg.end == reg.start is a valid
+            # region (of one basepair). Hence < instead of <=.
+            # Coding sequences that are smaller than 3 basepairs are probably
+            # non-existent in the wild, but it happens in the test data.
+            if reg.end < reg.start:  # utr exons
                 continue
             regs.append(reg)
         return regs
@@ -277,7 +281,11 @@ def refflat_and_gvcfs_to_tsv(refflat_file: str,
             coverage, gq_quals = (
                 feature_to_coverage_and_quality_lists(
                     regions, gvcf_readers))
-            covstats = CovStats.from_coverages_and_gq_qualities(
-                coverage, gq_quals)
-            yield (f"{refflat_record.gene}\t{refflat_record.transcript}\t"
-                   f"{str(covstats)}")
+            if coverage and gq_quals:
+                # If cds exons are processed, sometimes coverage and gq_quals
+                # will be empty lists as some transcripts do not have protein-
+                # coding exons. In that case skip.
+                covstats = CovStats.from_coverages_and_gq_qualities(
+                    coverage, gq_quals)
+                yield (f"{refflat_record.gene}\t{refflat_record.transcript}\t"
+                       f"{str(covstats)}")
