@@ -147,7 +147,7 @@ def stats_cli(input):
 @click.option('--per-transcript', 'region_of_interest',
               flag_value='transcript',
               help="Collect metrics per transcript")
-@click.option('--transcript-cds-exons', 'region_of_interest',
+@click.option('--per-transcript-cds-exons', 'region_of_interest',
               flag_value="transcript_cds_exons",
               help="Collect metrics per transcript, only considering the "
                    "exons in the coding region.")
