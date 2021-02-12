@@ -49,7 +49,7 @@ setup(
     install_requires=[
         "click",
         "cyvcf2",
-        "numpy>=1.20",
+        "numpy>=1.19",
         "tqdm"
     ],
     entry_points={
