@@ -141,6 +141,11 @@ def stats_cli(input):
 @click.option("--per-exon/--per-transcript",
               default=True,
               help="Collect metrics per exon or per transcript")
-def gcoverage_cli(input_gvcf, refflat_file, per_exon):
-    for line in refflat_and_gvcfs_to_tsv(refflat_file, input_gvcf, per_exon):
+@click.option("-s", "--short-column-names",
+              is_flag=True,
+              help="Print shorter column names for easier viewing on a "
+                   "terminal.")
+def gcoverage_cli(input_gvcf, refflat_file, per_exon, short_column_names):
+    for line in refflat_and_gvcfs_to_tsv(refflat_file, input_gvcf, per_exon,
+                                         short_column_names):
         print(line)
