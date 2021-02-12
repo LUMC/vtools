@@ -29,7 +29,7 @@ class BuildExt(build_ext):
 
 setup(
     name="v-tools",
-    version="1.1.1-dev",
+    version="2.0.0-dev",
     description="Various tools operating over VCF files",
     long_description=long_desc,
     cmdclass={"build_ext": BuildExt},
