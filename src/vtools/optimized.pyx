@@ -6,9 +6,7 @@ vtools.optimized
 :copyright: (c) 2018 Leiden University Medical Center
 :license: MIT
 """
-from collections import Counter
 import numpy
-cimport numpy as np
 
 
 cdef class Sample(object):
