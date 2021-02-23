@@ -198,7 +198,7 @@ def test_refflat_and_gvcfs_to_tsv_per_exon_compact():
     assert result[0] == ("gene\ttranscript\texon\t" + CovStats.header(True))
     assert result[1] == ("GENE1\tTR0001\t1\t6.00\t18.00\t6.00\t18.00\t"
                          "0.00\t0.00\t0.00\t0.00\t0.00\t"
-                         "100.00\t0.00\t0.00\t0.00\t0.00")
+                         "100.00\t0.00\t0.00\t0.00\t0.00\n")
 
 
 def test_refflat_and_gvcfs_to_tsv_per_transcript_verbose():
@@ -209,7 +209,7 @@ def test_refflat_and_gvcfs_to_tsv_per_transcript_verbose():
     assert result[0] == ("gene\ttranscript\t" + CovStats.header(False))
     assert result[3] == ("GENE3\tTR0006\t32.40\t49.23\t32.00\t79.00\t"
                          "100.00\t100.00\t100.00\t0.00\t0.00\t"
-                         "100.00\t100.00\t100.00\t80.00\t20.00")
+                         "100.00\t100.00\t100.00\t80.00\t20.00\n")
 
 
 def test_refflat_and_gvcfs_to_tsv_per_transcript_cds_exons():
@@ -224,7 +224,7 @@ def test_refflat_and_gvcfs_to_tsv_per_transcript_cds_exons():
     assert len(result) == 3
     assert result[1] == ("GENE1\tTR0001\t6.00\t5.82\t6.00\t18.00\t"
                          "0.00\t0.00\t0.00\t0.00\t0.00\t"
-                         "75.00\t0.00\t0.00\t0.00\t0.00")
+                         "75.00\t0.00\t0.00\t0.00\t0.00\n")
 
 
 MAIN_TESTS = [

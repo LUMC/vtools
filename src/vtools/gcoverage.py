@@ -1,5 +1,3 @@
-# MIT License
-#
 # Copyright (c) 2018, 2020 Leiden University Medical Center
 # Copyright (c) 2018 Sander Bollen
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,11 +24,17 @@ Calculate coverage statistics using GVCF files.
 
 import argparse
 import os
-from typing import Generator, Iterable, List, NamedTuple, Tuple, Union
+import tempfile
+import zipfile
+from pathlib import Path
+from typing import Generator, Iterable, List, NamedTuple, Tuple, Union, \
+    Optional
 
 import cyvcf2  # type: ignore
 
 import numpy as np
+
+from .util import zip_to_files
 
 
 class Region(NamedTuple):
@@ -81,6 +85,9 @@ class CovStats(NamedTuple):
         total_coverages = len(coverage_list)
         total_qualities = len(gq_quality_list)
 
+        if total_coverages == 0:
+            # If there is no coverage or quality return an empty line.
+            return cls(*(0.0,) * 14)
         # np.fromiter is faster than np.array in this case. Also specifying the
         # length allows allocating the array at once in memory, which is
         # faster. Use int64 and float64 which are compatible with python
@@ -116,12 +123,12 @@ class CovStats(NamedTuple):
         if compact:
             return ("mean_dp\tmean_gq\tmedian_dp\tmedian_gq\t%dp>=10\t"
                     "%dp>=20\t%dp>=30\t%dp>=50\t%dp>=100\t%gq>=10\t%gq>=20\t"
-                    "%gq>=30\t%gq>=50\t%gq>=90")
-        return "\t".join(cls.__annotations__.keys())
+                    "%gq>=30\t%gq>=50\t%gq>=90\n")
+        return "\t".join(cls.__annotations__.keys()) + '\n'
 
     def __str__(self):
         # 2 decimals is enough precision.
-        return "\t".join("{:.2f}".format(value) for value in self)
+        return "\t".join("{:.2f}".format(value) for value in self) + '\n'
 
 
 class RefRecord(NamedTuple):
@@ -294,6 +301,24 @@ def refflat_and_gvcfs_to_tsv(refflat_file: str,
                        f"{str(covstats)}")
 
 
+def refflat_zip_and_gvcfs_to_zip(refflat_zip: str,
+                                 gvcfs: List[str],
+                                 region_of_interest: str,
+                                 short_column_names: bool = False,
+                                 output_name: Optional[str] = None):
+    zipname = output_name or Path(refflat_zip).stem + ".tsv.zip"
+    with zipfile.ZipFile(zipname, "w", compression=zipfile.ZIP_DEFLATED
+                         ) as result_zip:
+        for refflat_file in zip_to_files(refflat_zip):
+            with tempfile.NamedTemporaryFile("w") as tmp:
+                tmp.writelines(refflat_and_gvcfs_to_tsv(
+                    refflat_file, gvcfs, region_of_interest, short_column_names
+                ))
+                tmp.flush()  # Ensure everything is written to disk.
+                filename: str = Path(refflat_file).stem + ".tsv"
+                result_zip.write(tmp.name, filename)
+
+
 def argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Calculate coverage statistics using one or more "
@@ -327,12 +352,29 @@ def argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("-s", "--short-column-names", action="store_true",
                         help="Print shorter column names for easier viewing "
                              "on a terminal.")
+    parser.add_argument("-o", "--output", type=str,
+                        help="Use an output filename instead of printing to "
+                             "stdout or automatically determining the name of "
+                             "the zip.")
     return parser
 
 
 def main():
     args = argument_parser().parse_args()
-    for line in refflat_and_gvcfs_to_tsv(args.refflat_file, args.input_gvcf,
+    if args.refflat_file:
+        lines = refflat_and_gvcfs_to_tsv(args.refflat_file,
+                                         args.input_gvcf,
                                          args.region_of_interest,
-                                         args.short_column_names):
-        print(line)
+                                         args.short_column_names)
+        if args.output:
+            with open(args.output, "wt") as output_h:
+                output_h.writelines(lines)
+        else:
+            for line in lines:
+                print(line, end='')
+    else:
+        refflat_zip_and_gvcfs_to_zip(args.refflat_zip,
+                                     args.input_gvcf,
+                                     args.region_of_interest,
+                                     args.short_column_names,
+                                     args.output)
