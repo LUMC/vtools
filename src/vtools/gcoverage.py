@@ -322,8 +322,8 @@ def argument_parser() -> argparse.ArgumentParser:
     method_grp.add_argument("--per-transcript-cds-exons", action="store_const",
                             dest="region_of_interest",
                             const='transcript_cds_exons',
-                            help="Collect metrics per transcript, only considering the "
-                                 "exons in the coding region.")
+                            help="Collect metrics per transcript, only "
+                                 "considering the exons in the coding region.")
     parser.add_argument("-s", "--short-column-names", action="store_true",
                         help="Print shorter column names for easier viewing "
                              "on a terminal.")
