@@ -24,6 +24,7 @@
 Calculate coverage statistics using GVCF files.
 """
 
+import argparse
 import os
 from typing import Generator, Iterable, List, NamedTuple, Tuple, Union
 
@@ -213,7 +214,7 @@ def feature_to_coverage_and_quality_lists(feature: List[Region],
 def region_and_vcf_to_coverage_and_quality_lists(
         region: Region,
         vcf: cyvcf2.VCF
-        ) -> Tuple[List[int], List[float]]:
+) -> Tuple[List[int], List[float]]:
     """
     Gets the coverages and qualities for a particular region in a VCF.
     """
@@ -291,3 +292,47 @@ def refflat_and_gvcfs_to_tsv(refflat_file: str,
                     coverage, gq_quals)
                 yield (f"{refflat_record.gene}\t{refflat_record.transcript}\t"
                        f"{str(covstats)}")
+
+
+def argument_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Calculate coverage statistics using one or more "
+                    "single-sample gvcf files. The statistics are calculated "
+                    "over the intervals in the refflat file(s).")
+    parser.add_argument("input_gvcf", metavar="GVCF", nargs="+", type=str,
+                        help="The GVCF file(s) over which the coverage is "
+                             "calculated. When multiple files are given the "
+                             "average is calculated.  Multisample gvcf files "
+                             "are not supported.")
+    refflat_grp = parser.add_mutually_exclusive_group(required=True)
+    refflat_grp.add_argument("-R", "--refflat-file", type=str,
+                             help="Path to refFlat file.")
+    refflat_grp.add_argument("-Z", "--refflat-zip", type=str,
+                             help="Zip file containing multiple refflats. The "
+                                  "output will be a zipfile with multiple TSV "
+                                  "files.")
+    method_grp = parser.add_mutually_exclusive_group()
+    parser.set_defaults(region_of_interest='exon')
+    method_grp.add_argument("--per-exon", action="store_const",
+                            dest="region_of_interest", const='exon',
+                            help="Collect metrics per exon")
+    method_grp.add_argument("--per-transcript", action="store_const",
+                            dest="region_of_interest", const='transcript',
+                            help="Collect metrics per transcript")
+    method_grp.add_argument("--per-transcript-cds-exons", action="store_const",
+                            dest="region_of_interest",
+                            const='transcript_cds_exons',
+                            help="Collect metrics per transcript, only considering the "
+                                 "exons in the coding region.")
+    parser.add_argument("-s", "--short-column-names", action="store_true",
+                        help="Print shorter column names for easier viewing "
+                             "on a terminal.")
+    return parser
+
+
+def main():
+    args = argument_parser().parse_args()
+    for line in refflat_and_gvcfs_to_tsv(args.refflat_file, args.input_gvcf,
+                                         args.region_of_interest,
+                                         args.short_column_names):
+        print(line)
