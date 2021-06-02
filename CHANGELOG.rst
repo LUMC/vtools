@@ -29,8 +29,8 @@ script.
   GVCF(s).
 + Multiple single sample GVCFs can now be used as input for vtools-gcoverage.
   The output statistics will be the average over the input GVCFs.
-+ Fixed a bug in vtools-gcoverage where all bases from all variants in a
++ Fixed a bug in vtools-gcoverage where all bases from all GVCF records in a
   certain region were considered for coverage statistics, while the first
-  and last variant could have bases extruding from the region of interest.
+  and last record could have bases extruding from the region of interest.
   This means that results processed with this newer version of vtools-gcoverage
   will be slightly different for most of the data.
