@@ -1,5 +1,3 @@
-# MIT License
-#
 # Copyright (c) 2018, 2020 Leiden University Medical Center
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,6 +19,7 @@
 # SOFTWARE.
 
 import math
+import sys
 from pathlib import Path
 
 from cyvcf2 import VCF  # type: ignore
@@ -29,10 +28,16 @@ import numpy as np
 
 import pytest
 
+from vtools import gcoverage
 from vtools.gcoverage import CovStats, RefRecord,  Region, \
     feature_to_coverage_and_quality_lists, file_to_refflat_records, \
     qualmean, refflat_and_gvcfs_to_tsv, \
     region_and_vcf_to_coverage_and_quality_lists
+
+
+DATA_DIR = Path(__file__).parent / "gcoverage_data"
+TEST_GVCF = DATA_DIR / "test.g.vcf.gz"
+TEST_REFFLAT = DATA_DIR / "test.refflat"
 
 
 def test_qualmean():
@@ -149,7 +154,7 @@ def test_region_length():
 
 
 def test_file_ro_refflat_records():
-    test_refflat = Path(__file__).parent / "gcoverage_data" / "10genes.refflat"
+    test_refflat = DATA_DIR / "10genes.refflat"
     record_list = list(file_to_refflat_records(test_refflat))
     transcripts = [record.transcript for record in record_list]
     assert transcripts == [
@@ -158,8 +163,7 @@ def test_file_ro_refflat_records():
 
 
 def test_region_and_vcf_to_coverage_and_quality_lists():
-    test_vcf_path = Path(__file__).parent / "gcoverage_data" / "test.g.vcf.gz"
-    test_vcf = VCF(str(test_vcf_path))
+    test_vcf = VCF(str(TEST_GVCF))
     region = Region("chr1", 20, 30)
     coverages, qualities = region_and_vcf_to_coverage_and_quality_lists(
         region, test_vcf)
@@ -171,8 +175,7 @@ def test_region_and_vcf_to_coverage_and_quality_lists():
 
 
 def test_feature_to_coverage_and_quality_arrays():
-    test_vcf_path = Path(__file__).parent / "gcoverage_data" / "test.g.vcf.gz"
-    test_vcf = VCF(str(test_vcf_path))
+    test_vcf = VCF(str(TEST_GVCF))
     regions = [Region("chr1", 1, 10), Region("chr1", 21, 30)]
     coverages, qualities = feature_to_coverage_and_quality_lists(
         regions, [test_vcf])
@@ -186,38 +189,29 @@ def test_feature_to_coverage_and_quality_arrays():
 
 
 def test_refflat_and_gvcfs_to_tsv_per_exon_compact():
-    data_dir = Path(__file__).parent / "gcoverage_data"
-    gvcfs = [str(data_dir / "test.g.vcf.gz")]
-    refflat = data_dir / "test.refflat"
-    lines = refflat_and_gvcfs_to_tsv(refflat, gvcfs,
+    lines = refflat_and_gvcfs_to_tsv(TEST_REFFLAT, [TEST_GVCF],
                                      region_of_interest="exon",
                                      compact_header=True)
     result = list(lines)
     assert result[0] == ("gene\ttranscript\texon\t" + CovStats.header(True))
     assert result[1] == ("GENE1\tTR0001\t1\t6.00\t18.00\t6.00\t18.00\t"
                          "0.00\t0.00\t0.00\t0.00\t0.00\t"
-                         "100.00\t0.00\t0.00\t0.00\t0.00")
+                         "100.00\t0.00\t0.00\t0.00\t0.00\n")
 
 
 def test_refflat_and_gvcfs_to_tsv_per_transcript_verbose():
-    data_dir = Path(__file__).parent / "gcoverage_data"
-    gvcfs = [str(data_dir / "test.g.vcf.gz")]
-    refflat = data_dir / "test.refflat"
-    lines = refflat_and_gvcfs_to_tsv(refflat, gvcfs,
+    lines = refflat_and_gvcfs_to_tsv(TEST_REFFLAT, [TEST_GVCF],
                                      region_of_interest="transcript",
                                      compact_header=False)
     result = list(lines)
     assert result[0] == ("gene\ttranscript\t" + CovStats.header(False))
     assert result[3] == ("GENE3\tTR0006\t32.40\t49.23\t32.00\t79.00\t"
                          "100.00\t100.00\t100.00\t0.00\t0.00\t"
-                         "100.00\t100.00\t100.00\t80.00\t20.00")
+                         "100.00\t100.00\t100.00\t80.00\t20.00\n")
 
 
 def test_refflat_and_gvcfs_to_tsv_per_transcript_cds_exons():
-    data_dir = Path(__file__).parent / "gcoverage_data"
-    gvcfs = [str(data_dir / "test.g.vcf.gz")]
-    refflat = data_dir / "test.refflat"
-    lines = refflat_and_gvcfs_to_tsv(refflat, gvcfs,
+    lines = refflat_and_gvcfs_to_tsv(TEST_REFFLAT, [TEST_GVCF],
                                      region_of_interest="transcript_cds_exons",
                                      compact_header=False)
     result = list(lines)
@@ -228,4 +222,29 @@ def test_refflat_and_gvcfs_to_tsv_per_transcript_cds_exons():
     assert len(result) == 3
     assert result[1] == ("GENE1\tTR0001\t6.00\t5.82\t6.00\t18.00\t"
                          "0.00\t0.00\t0.00\t0.00\t0.00\t"
-                         "75.00\t0.00\t0.00\t0.00\t0.00")
+                         "75.00\t0.00\t0.00\t0.00\t0.00\n")
+
+
+MAIN_TESTS = [
+    (["-R", str(TEST_REFFLAT), str(TEST_GVCF)],
+     "GENE1\tTR0001\t1\t6.00\t18.00\t6.00\t18.00\t0.00\t0.00\t0.00\t0.00\t"
+     "0.00\t100.00\t0.00\t0.00\t0.00\t0.00"
+     ),
+    (["-R", str(TEST_REFFLAT), str(TEST_GVCF), "--per-transcript"],
+     "GENE3\tTR0006\t32.40\t49.23\t32.00\t79.00\t100.00\t100.00\t100.00\t"
+     "0.00\t0.00\t100.00\t100.00\t100.00\t80.00\t20.00"
+     ),
+    (["-R", str(TEST_REFFLAT), str(TEST_GVCF),
+      "--per-transcript-cds-exons"],
+     "GENE1\tTR0001\t6.00\t5.82\t6.00\t18.00\t0.00\t0.00\t0.00\t0.00\t"
+     "0.00\t75.00\t0.00\t0.00\t0.00\t0.00"
+     )
+]
+
+
+@pytest.mark.parametrize(["args", "in_result"], MAIN_TESTS)
+def test_main(args, in_result, capsys):
+    sys.argv = [""] + args
+    gcoverage.main()
+    result = capsys.readouterr()
+    assert in_result in result.out

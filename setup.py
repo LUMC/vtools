@@ -41,7 +41,7 @@ setup(
         "console_scripts": [
             "vtools-filter = vtools.cli:filter_cli",
             "vtools-stats = vtools.cli:stats_cli",
-            "vtools-gcoverage = vtools.cli:gcoverage_cli",
+            "vtools-gcoverage = vtools.gcoverage:main",
             "vtools-evaluate = vtools.cli:evaluate_cli"
         ]
     },

@@ -12,6 +12,9 @@ version 2.0.0-dev
 Numerous backwards incompatible changes have been made to the vtools-gcoverage
 script.
 
++ Multiple refflat files can now be used as input if they are provided
+  in a zip file with the ``-Z`` or ``--refflat-zip`` flag. This is useful for
+  for instance when assessing multiple gene panels for exon coverage.
 + vtools-coverage's ``--per-transcript`` flag now exhibits different behavior.
   It now gets the coverage for the entire transcript as supplied by the refflat
   file. The old behavior was to only take the exons in the coding region and

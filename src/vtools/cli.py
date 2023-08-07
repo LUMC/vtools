@@ -16,7 +16,6 @@ from cyvcf2 import VCF, Writer  # type: ignore
 
 from .evaluate import site_concordancy
 from .filter import FilterClass, FilterParams,  Filterer
-from .gcoverage import refflat_and_gvcfs_to_tsv
 from .stats import Stats
 
 
@@ -127,37 +126,3 @@ def filter_cli(input, output, trash, params_file,
 def stats_cli(input):
     stats = Stats(input)
     print(stats.as_json)
-
-
-@click.command(help="Calculate coverage statistics using one or more "
-                    "single-sample gvcf files. Multisample gvcf files are not "
-                    "supported. The statistics are calculated over the "
-                    "intervals in the refflat file.")
-@click.argument("input-gvcf",
-                nargs=-1,
-                type=click.Path(exists=True, readable=True),
-                required=True)
-@click.option("-R", "--refflat-file",
-              type=click.Path(exists=True, readable=True),
-              required=True,
-              help="Path to refFlat file")
-@click.option('--per-exon', 'region_of_interest',
-              flag_value='exon', default=True,
-              help="Collect metrics per exon")
-@click.option('--per-transcript', 'region_of_interest',
-              flag_value='transcript',
-              help="Collect metrics per transcript")
-@click.option('--per-transcript-cds-exons', 'region_of_interest',
-              flag_value="transcript_cds_exons",
-              help="Collect metrics per transcript, only considering the "
-                   "exons in the coding region.")
-@click.option("-s", "--short-column-names",
-              is_flag=True,
-              help="Print shorter column names for easier viewing on a "
-                   "terminal.")
-def gcoverage_cli(input_gvcf, refflat_file, region_of_interest,
-                  short_column_names):
-    for line in refflat_and_gvcfs_to_tsv(refflat_file, input_gvcf,
-                                         region_of_interest,
-                                         short_column_names):
-        print(line)
