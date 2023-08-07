@@ -27,8 +27,8 @@ import os
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Generator, Iterable, List, NamedTuple, Tuple, Union, \
-    Optional
+from typing import (Generator, Iterable, List, NamedTuple, Optional, Tuple,
+                    Union)
 
 import cyvcf2  # type: ignore
 

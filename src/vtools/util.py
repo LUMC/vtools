@@ -35,5 +35,3 @@ def zip_to_files(zip_file: Union[str, os.PathLike]
             output_file = os.path.join(temp_dir, zipname)
             yield output_file
             os.remove(output_file)
-
-
